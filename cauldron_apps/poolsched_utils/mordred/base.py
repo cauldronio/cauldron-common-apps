@@ -24,7 +24,7 @@ class Backend:
         self.config = Config(MORDRED_FILE)
         self.config.set_param('es_collection', 'url', ELASTIC_URL)
         self.config.set_param('es_enrichment', 'url', ELASTIC_URL)
-        self.config.set_param('aliases_file', ALIASES_FILE)
+        self.config.set_param('general', 'aliases_file', ALIASES_FILE)
 
     def start_analysis(self):
         """Call to Grimoirelab"""
