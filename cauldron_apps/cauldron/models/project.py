@@ -64,6 +64,13 @@ class Project(models.Model):
         }
         return summary
 
+    def url_list(self):
+        """Returns a list with the URLs of the repositories within the project"""
+        urls = []
+        for repo in self.repository_set.select_subclasses():
+            urls.append(repo.datasource_url)
+        return urls
+
     def repos_running(self):
         git = GitRepository.objects.filter(projects=self).filter(repo_sched__isnull=False)
         git_running = git.filter(Q(repo_sched__igitraw__isnull=False) | Q(repo_sched__igitenrich__isnull=False))\
