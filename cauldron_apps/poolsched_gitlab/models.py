@@ -7,6 +7,7 @@ from django.db.models import Count
 from django.utils.timezone import now
 
 from poolsched.models import Intention, ArchivedIntention, Job
+from cauldron_apps.poolsched_autorefresh.models import IAutorefresh, IAutorefreshArchived, AutoRefreshManager
 
 from .mordred import GitLabRaw, GitLabEnrich
 
@@ -395,3 +396,63 @@ class IGLEnrichArchived(ArchivedIntention):
     @property
     def process_name(self):
         return "Gitlab data enrichment"
+
+
+class IGLIssueAutoRefresh(IAutorefresh, Intention):
+    objects = AutoRefreshManager()
+
+    @property
+    def backend(self):
+        return 'gitlab:issue'
+
+    @property
+    def process_name(self):
+        return 'GL Issue Autorefresh'
+
+    @classmethod
+    def _archived_model(cls):
+        return IGLIssueAutoRefreshArchived
+
+    class Meta:
+        db_table = TABLE_PREFIX + '_issue_autorefresh'
+        verbose_name_plural = "GL Issue Autorefresh"
+
+
+class IGLIssueAutoRefreshArchived(IAutorefreshArchived):
+    @property
+    def process_name(self):
+        return 'GL Issue Autorefresh Archived'
+
+    class Meta:
+        db_table = TABLE_PREFIX + '_issue_autorefresh_archived'
+        verbose_name_plural = "GL Issue Autorefresh Archived"
+
+
+class IGLMergeAutoRefresh(IAutorefresh, Intention):
+    objects = AutoRefreshManager()
+
+    @property
+    def backend(self):
+        return 'gitlab:merge'
+
+    @property
+    def process_name(self):
+        return 'GL Merge Autorefresh'
+
+    @classmethod
+    def _archived_model(cls):
+        return IGLMergeAutoRefreshArchived
+
+    class Meta:
+        db_table = TABLE_PREFIX + '_merge_autorefresh'
+        verbose_name_plural = "GL Merge Autorefresh"
+
+
+class IGLMergeAutoRefreshArchived(IAutorefreshArchived):
+    @property
+    def process_name(self):
+        return 'GL Merge Autorefresh Archived'
+
+    class Meta:
+        db_table = TABLE_PREFIX + '_merge_autorefresh_archived'
+        verbose_name_plural = "GL Merge Autorefresh Archived"

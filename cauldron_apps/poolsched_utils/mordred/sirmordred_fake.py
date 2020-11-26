@@ -31,3 +31,8 @@ class TaskEnrich:
 
     def execute(self, *args, **kwargs):
         logging.error('Fake TaskEnrich.execute() called')
+
+
+class Task:
+    def __init__(self, *args, **kwargs):
+        logging.error('Fake Task created')

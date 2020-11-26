@@ -1,7 +1,9 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
-from .models import IGHRaw, IGHEnrich, IGHEnrichArchived, IGHRawArchived, GHRepo, GHToken
+from .models import IGHRaw, IGHEnrich, IGHEnrichArchived, IGHRawArchived, GHRepo, GHToken, \
+    IGHIssueAutoRefresh, IGH2IssueAutoRefresh, IGHRepoAutoRefresh, \
+    IGHIssueAutoRefreshArchived, IGH2IssueAutoRefreshArchived, IGHRepoAutoRefreshArchived
 
 
 def user_name(obj):
@@ -93,3 +95,16 @@ class TokenAdmin(admin.ModelAdmin):
     def job_count(self, obj):
         return obj.jobs.count()
 
+
+@admin.register(IGHIssueAutoRefresh, IGH2IssueAutoRefresh, IGHRepoAutoRefresh)
+class AutoRefreshIntentionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'created', 'job', 'last_autorefresh', 'scheduled')
+    list_filter = ('created', RunningInAWorker, 'last_autorefresh', 'scheduled')
+    ordering = ('-scheduled', )
+
+
+@admin.register(IGHIssueAutoRefreshArchived, IGH2IssueAutoRefreshArchived, IGHRepoAutoRefreshArchived)
+class AutoRefreshArchivedIntentionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'created', 'completed', 'status', 'arch_job')
+    list_filter = ('status', 'created', 'completed')
+    ordering = ('-completed', )

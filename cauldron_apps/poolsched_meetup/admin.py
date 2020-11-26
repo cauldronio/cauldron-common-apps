@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
-from .models import IMeetupRaw, IMeetupEnrich, IMeetupRawArchived, IMeetupEnrichArchived, MeetupRepo, MeetupToken
+from .models import IMeetupRaw, IMeetupEnrich, IMeetupRawArchived, IMeetupEnrichArchived, MeetupRepo, MeetupToken, \
+    IMeetupAutoRefresh, IMeetupAutoRefreshArchived
 
 
 def user_name(obj):
@@ -86,3 +87,17 @@ class TokenAdmin(admin.ModelAdmin):
 
     def job_count(self, obj):
         return obj.jobs.count()
+
+
+@admin.register(IMeetupAutoRefresh)
+class AutoRefreshIntentionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'created', 'job', 'last_autorefresh', 'scheduled')
+    list_filter = ('created', RunningInAWorker, 'last_autorefresh', 'scheduled')
+    ordering = ('-scheduled', )
+
+
+@admin.register(IMeetupAutoRefreshArchived)
+class AutoRefreshArchivedIntentionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'created', 'completed', 'status', 'arch_job')
+    list_filter = ('status', 'created', 'completed')
+    ordering = ('-completed', )

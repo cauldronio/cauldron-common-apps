@@ -5,6 +5,8 @@ from django.utils.timezone import now
 
 from poolsched.models import Job, Intention, ArchivedIntention
 
+from cauldron_apps.poolsched_autorefresh.models import IAutorefresh, IAutorefreshArchived, AutoRefreshManager
+
 from .mordred import GitEnrich, GitRaw
 
 logger = logging.getLogger(__name__)
@@ -270,3 +272,36 @@ class IGitEnrichArchived(ArchivedIntention):
     @property
     def process_name(self):
         return "Git data enrichment"
+
+
+class IGitAutoRefresh(IAutorefresh, Intention):
+    objects = AutoRefreshManager()
+
+    @property
+    def backend(self):
+        return 'git'
+
+    @property
+    def process_name(self):
+        return 'Git Autorefresh'
+
+    @classmethod
+    def _archived_model(cls):
+        return IGitAutoRefreshArchived
+
+    class Meta:
+        db_table = TABLE_PREFIX + '_autorefresh'
+        verbose_name_plural = "Git Autorefresh"
+
+
+class IGitAutoRefreshArchived(IAutorefreshArchived):
+    objects = AutoRefreshManager()
+
+    @property
+    def process_name(self):
+        return 'Git Autorefresh Archived'
+
+    class Meta:
+        db_table = TABLE_PREFIX + '_autorefresh_archived'
+        verbose_name_plural = "Git Autorefresh Archived"
+

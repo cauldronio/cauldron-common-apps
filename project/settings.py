@@ -33,6 +33,12 @@ ES_IN_HOST = os.environ.get('ELASTIC_HOST')
 ES_IN_PORT = os.environ.get('ELASTIC_PORT')
 ES_ADMIN_PASSWORD = os.environ.get('ELASTIC_PASS')
 
+SORTINGHAT = os.environ.get('SORTINGHAT', False) in (True, 'True', 'true')
+SORTINGHAT_HOST = os.environ.get('SORTINGHAT_HOST')
+SORTINGHAT_DATABASE = os.environ.get('SORTINGHAT_DATABASE')
+SORTINGHAT_USER = os.environ.get('SORTINGHAT_USER')
+SORTINGHAT_PASSWORD = os.environ.get('SORTINGHAT_PASSWORD')
+
 ALLOWED_HOSTS = []
 
 
@@ -50,6 +56,7 @@ INSTALLED_APPS = [
     'cauldron_apps.poolsched_github',
     'cauldron_apps.poolsched_gitlab',
     'cauldron_apps.poolsched_meetup',
+    'cauldron_apps.poolsched_autorefresh',
     'cauldron_apps.cauldron',
 ]
 

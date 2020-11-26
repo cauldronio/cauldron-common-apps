@@ -7,6 +7,7 @@ from django.db.models import Count
 from django.utils.timezone import now
 
 from poolsched.models import Intention, ArchivedIntention, Job
+from cauldron_apps.poolsched_autorefresh.models import IAutorefresh, IAutorefreshArchived, AutoRefreshManager
 
 from .mordred import MeetupRaw, MeetupEnrich
 
@@ -385,3 +386,33 @@ class IMeetupEnrichArchived(ArchivedIntention):
     @property
     def process_name(self):
         return "Meetup data enrichment"
+
+
+class IMeetupAutoRefresh(IAutorefresh, Intention):
+    objects = AutoRefreshManager()
+
+    @property
+    def backend(self):
+        return 'meetup'
+
+    @property
+    def process_name(self):
+        return 'Meetup Autorefresh'
+
+    @classmethod
+    def _archived_model(cls):
+        return IMeetupAutoRefreshArchived
+
+    class Meta:
+        db_table = TABLE_PREFIX + '_autorefresh'
+        verbose_name_plural = "Meetup Autorefresh"
+
+
+class IMeetupAutoRefreshArchived(IAutorefreshArchived):
+    @property
+    def process_name(self):
+        return 'Meetup Autorefresh Archived'
+
+    class Meta:
+        db_table = TABLE_PREFIX + '_autorefresh_archived'
+        verbose_name_plural = "Meetup Autorefresh Archived"

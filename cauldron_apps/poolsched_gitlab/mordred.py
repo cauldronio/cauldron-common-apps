@@ -16,7 +16,7 @@ except ImportError:
     TaskRawDataCollection = sirmordred_fake.TaskRawDataCollection
     TaskEnrich = sirmordred_fake.TaskEnrich
 
-from cauldron_apps.poolsched_utils.mordred.base import Backend
+from cauldron_apps.poolsched_utils.mordred.backend import Backend
 
 
 logger = logging.getLogger(__name__)
