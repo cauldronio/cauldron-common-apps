@@ -2,6 +2,8 @@ from .project import Project
 from .project import ProjectRole
 from .repository import Repository, GitRepository, GitHubRepository, \
                         GitLabRepository, MeetupRepository
+from .ighowner import IAddGHOwner, IAddGHOwnerArchived
+from .iglowner import IAddGLOwner, IAddGLOwnerArchived
 
 from django.db import models
 from django.conf import settings

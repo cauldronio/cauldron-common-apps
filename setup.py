@@ -35,6 +35,8 @@ setup(
     install_requires=[
         "django>=3.0",
         "django-model-utils>=4.0",
-        "sqlalchemy"
+        "sqlalchemy",
+        "PyGithub>=1.51,<2.0",
+        "python-dateutil>=2.8.1,<3",
     ]
 )

@@ -6,6 +6,12 @@ from django.conf import settings
 from django.db.models import Q
 
 from .repository import GitHubRepository, GitLabRepository, MeetupRepository, GitRepository
+from ..opendistro import OpendistroApi, BACKEND_INDICES
+
+ELASTIC_URL = 'https://admin:{}@{}:{}'.format(settings.ES_ADMIN_PASSWORD,
+                                              settings.ES_IN_HOST,
+                                              settings.ES_IN_PORT)
+
 
 
 class Project(models.Model):
@@ -111,6 +117,27 @@ class Project(models.Model):
             'meetup': {'running': meetup_running, 'finish': meetup_finish}
         }
         return status
+
+    def update_elastic_role(self):
+        odfe_api = OpendistroApi(ELASTIC_URL, settings.ES_ADMIN_PASSWORD)
+        permissions = []
+        for index in BACKEND_INDICES['git']:
+            url_list = [repo.datasource_url for repo in GitRepository.objects.filter(projects=self)]
+            index_permissions = OpendistroApi.create_index_permissions(url_list, index)
+            permissions.append(index_permissions)
+        for index in BACKEND_INDICES['github']:
+            url_list = [repo.datasource_url for repo in GitHubRepository.objects.filter(projects=self)]
+            index_permissions = OpendistroApi.create_index_permissions(url_list, index)
+            permissions.append(index_permissions)
+        for index in BACKEND_INDICES['gitlab']:
+            url_list = [repo.datasource_url for repo in GitLabRepository.objects.filter(projects=self)]
+            index_permissions = OpendistroApi.create_index_permissions(url_list, index)
+            permissions.append(index_permissions)
+        for index in BACKEND_INDICES['meetup']:
+            url_list = [repo.datasource_url for repo in MeetupRepository.objects.filter(projects=self)]
+            index_permissions = OpendistroApi.create_index_permissions(url_list, index)
+            permissions.append(index_permissions)
+        odfe_api.update_elastic_role(self.projectrole.role, permissions)
 
 
 class ProjectRole(models.Model):

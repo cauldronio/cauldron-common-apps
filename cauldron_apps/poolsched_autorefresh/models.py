@@ -18,9 +18,6 @@ logger = logging.getLogger(__name__)
 global_logger = logging.getLogger()
 
 
-BACKENDS = ['meetup']
-
-
 class AutoRefreshManager(models.Manager):
     """Model manager for instances of IAutorefresh"""
 
