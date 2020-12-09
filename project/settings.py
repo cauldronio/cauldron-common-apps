@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'cauldron_apps.poolsched_gitlab',
     'cauldron_apps.poolsched_meetup',
     'cauldron_apps.poolsched_autorefresh',
+    'cauldron_apps.poolsched_merge_identities',
     'cauldron_apps.cauldron',
 ]
 
