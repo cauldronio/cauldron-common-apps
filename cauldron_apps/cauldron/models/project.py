@@ -1,3 +1,4 @@
+import os
 from datetime import datetime, timedelta
 
 import pytz
@@ -12,6 +13,7 @@ ELASTIC_URL = 'https://admin:{}@{}:{}'.format(settings.ES_ADMIN_PASSWORD,
                                               settings.ES_IN_HOST,
                                               settings.ES_IN_PORT)
 
+PATH_STATIC_FILES = '/download/'
 
 
 class Project(models.Model):
@@ -59,6 +61,20 @@ class Project(models.Model):
         n_gitlab = GitLabRepository.objects.filter(projects=self).count()
         n_meetup = MeetupRepository.objects.filter(projects=self).count()
         running = self.repos_running()
+
+        project_csv = {
+            'generating': False,
+            'download': False
+        }
+        try:
+            git_csv = self.git_csv_file.latest('created')
+            project_csv['download'] = {'date': git_csv.created,
+                                       'link': os.path.join(PATH_STATIC_FILES, git_csv.location)}
+        except models.ObjectDoesNotExist:
+            pass
+
+        project_csv['generating'] = self.iexport_git_csv.exists()
+
         summary = {
             'id': self.id,
             'total': total,
@@ -66,7 +82,8 @@ class Project(models.Model):
             'git': n_git,
             'github': n_github,
             'gitlab': n_gitlab,
-            'meetup': n_meetup
+            'meetup': n_meetup,
+            'project_csv': project_csv
         }
         return summary
 
