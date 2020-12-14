@@ -84,7 +84,7 @@ class IMergeIdentities(Intention):
         """
 
         # Schedule next merge identities
-        next_merge = now() + datetime.timedelta(hours=1)
+        next_merge = now() + datetime.timedelta(days=1)
         logger.info(f"Schedule next merge identities for at {next_merge}")
         IMergeIdentities.objects.create(user=self.user, scheduled=next_merge)
 
