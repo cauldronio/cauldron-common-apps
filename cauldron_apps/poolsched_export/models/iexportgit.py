@@ -20,7 +20,7 @@ from .. import utils
 
 ELASTIC_URL = 'https://{}:{}'.format(settings.ES_IN_HOST, settings.ES_IN_PORT)
 
-CSV_COLUMNS = ['hash', 'repo_name', 'author_uuid', 'author_domain', 'author_date', 'utc_author', 'tz'
+CSV_COLUMNS = ['hash', 'repo_name', 'author_uuid', 'author_domain', 'author_date', 'utc_author', 'tz',
                'commit_date', 'utc_commit', 'committer_domain', 'files', 'lines_added', 'lines_removed']
 
 logger = logging.getLogger(__name__)
