@@ -70,6 +70,11 @@ class Repository(models.Model):
     def remove_intentions(self, user):
         raise NotImplementedError
 
+    def refresh(self, user):
+        """Try to refresh the repository.
+        Return whether the repository is going to be refreshed or not"""
+        raise NotImplementedError
+
 
 class GitRepository(Repository):
     url = models.CharField(max_length=255, unique=True)
@@ -101,7 +106,9 @@ class GitRepository(Repository):
         return self.url
 
     def refresh(self, user):
-        git_api.analyze_git_repo_obj(user, self.repo_sched)
+        """Try to refresh the repository.
+        Return whether the repository is going to be refreshed or not"""
+        return git_api.analyze_git_repo_obj(user, self.repo_sched)
 
     @property
     def status(self):
@@ -186,7 +193,9 @@ class GitHubRepository(Repository):
         return f"https://github.com/{self.owner}/{self.repo}"
 
     def refresh(self, user):
-        github_api.analyze_gh_repo_obj(user, self.repo_sched)
+        """Try to refresh the repository.
+        Return whether the repository is going to be refreshed or not"""
+        return github_api.analyze_gh_repo_obj(user, self.repo_sched)
 
     @property
     def status(self):
@@ -240,6 +249,9 @@ class GitHubRepository(Repository):
 class GitLabRepository(Repository):
     owner = models.CharField(max_length=40)
     repo = models.CharField(max_length=100)
+    instance = models.ForeignKey(gitlab_models.GLInstance, on_delete=models.SET_NULL,
+                                 default='GitLab', null=True, blank=True,
+                                 to_field='name')
     parent = models.OneToOneField(to=Repository, on_delete=models.CASCADE, parent_link=True, related_name='gitlab')
     repo_sched = models.OneToOneField(gitlab_models.GLRepo, on_delete=models.SET_NULL, null=True)
 
@@ -256,22 +268,23 @@ class GitLabRepository(Repository):
 
     def link_sched_repo(self):
         if not self.repo_sched:
-            instance = gitlab_models.GLInstance.objects.get(name='GitLab')
             repo_sched, _ = gitlab_models.GLRepo.objects.get_or_create(owner=self.owner, repo=self.repo,
-                                                                instance=instance)
+                                                                       instance=self.instance)
             self.repo_sched = repo_sched
             self.save()
 
     @property
     def datasource_url(self):
-        return f"https://gitlab.com/{self.owner}/{self.repo}"
+        return f'{self.instance.endpoint}/{self.owner}/{self.repo}'
 
     @property
     def repository_link(self):
-        return f"https://gitlab.com/{self.owner}/{self.repo}"
+        return f'{self.instance.endpoint}/{self.owner}/{self.repo}'
 
     def refresh(self, user):
-        gitlab_api.analyze_gl_repo_obj(user, self.repo_sched)
+        """Try to refresh the repository.
+        Return whether the repository is going to be refreshed or not"""
+        return gitlab_api.analyze_gl_repo_obj(user, self.repo_sched)
 
     @property
     def status(self):
@@ -352,7 +365,9 @@ class MeetupRepository(Repository):
         return f"https://www.meetup.com/{self.group}"
 
     def refresh(self, user):
-        meetup_api.analyze_meetup_repo_obj(user, self.repo_sched)
+        """Try to refresh the repository.
+        Return whether the repository is going to be refreshed or not"""
+        return meetup_api.analyze_meetup_repo_obj(user, self.repo_sched)
 
     @property
     def status(self):

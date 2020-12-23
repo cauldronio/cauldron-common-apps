@@ -26,7 +26,7 @@ BACKEND_SECTIONS = ['gitlab:issue', 'gitlab:merge']
 
 
 class GitLabRaw(Backend):
-    def __init__(self, url, token):
+    def __init__(self, url, token, endpoint):
         super().__init__()
         projects = {'Project': {}}
         for section in BACKEND_SECTIONS:
@@ -37,6 +37,7 @@ class GitLabRaw(Backend):
 
         for section in BACKEND_SECTIONS:
             self.config.set_param(section, 'api-token', token)
+            self.config.set_param(section, 'enterprise-url', endpoint)
         self.config.set_param('projects', 'projects_file', PROJECTS_FILE)
 
     def run(self):

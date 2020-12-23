@@ -5,7 +5,7 @@ from django.utils.timezone import now
 
 from poolsched.models import Intention, Job, ArchivedIntention
 from cauldron_apps.cauldron.models import Project, GitHubRepository, GitRepository
-from cauldron_apps.poolsched_github.models import GHToken
+from cauldron_apps.poolsched_github.models import GHToken, GHInstance
 from cauldron_apps.poolsched_git.api import analyze_git_repo_obj
 from cauldron_apps.poolsched_github.api import analyze_gh_repo_obj
 
@@ -53,6 +53,8 @@ class IAddGHOwner(Intention):
 
     # GitHub owner to get the repositories
     owner = models.CharField(max_length=128)
+    # GitHub instance for the owner
+    instance = models.ForeignKey(GHInstance, to_field='name', default='GitHub', on_delete=models.CASCADE)
     # Project in which this owner should be added
     project = models.ForeignKey(to=Project, on_delete=models.CASCADE)
     # Collect git repositories
@@ -99,6 +101,7 @@ class IAddGHOwner(Intention):
                                                 issues=self.issues,
                                                 forks=self.forks,
                                                 analyze=self.analyze,
+                                                instance=self.instance,
                                                 project=self.project,
                                                 job__isnull=False)
         try:
@@ -202,6 +205,7 @@ class IAddGHOwner(Intention):
                                            arch_job=arch_job,
                                            forks=self.forks,
                                            owner=self.owner,
+                                           instance=self.instance,
                                            project=self.project,
                                            commits=self.commits,
                                            issues=self.issues,
@@ -212,6 +216,7 @@ class IAddGHOwner(Intention):
 class IAddGHOwnerArchived(ArchivedIntention):
     intention_id = models.IntegerField()
     owner = models.CharField(max_length=128)
+    instance = models.ForeignKey(GHInstance, on_delete=models.CASCADE, to_field='name', default='GitHub')
     project = models.ForeignKey(to=Project, on_delete=models.SET_NULL, null=True)
     commits = models.BooleanField(default=True)
     forks = models.BooleanField(default=True)

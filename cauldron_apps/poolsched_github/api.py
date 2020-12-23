@@ -16,8 +16,8 @@ def analyze_gh_repo(user, owner, repo):
 
 def analyze_gh_repo_obj(user, gh_repo):
     if user.ghtokens.count() < 1:
-        return None
+        return False
     raw, _ = IGHRaw.objects.get_or_create(user=user, repo=gh_repo)
     enrich, _ = IGHEnrich.objects.get_or_create(user=user, repo=gh_repo)
     enrich.previous.add(raw)
-    return {'ok': 'tasks created'}
+    return True

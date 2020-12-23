@@ -141,6 +141,7 @@ class IGLRaw(Intention):
         :returns:      Job created by the worker, or None
         """
         tokens = self.user.gltokens\
+            .filter(instance=self.repo.instance)\
             .annotate(num_jobs=Count('jobs'))\
             .filter(num_jobs__lt=GLToken.MAX_JOBS_TOKEN)
         # Only create the job if there is at least one token
@@ -157,15 +158,15 @@ class IGLRaw(Intention):
 
         :param job: job to be run
         """
-        token = job.gltokens.filter(reset__lt=now()).first()
-        logger.info(f"Running GitLabRaw intention: {self.repo.owner}/{self.repo.repo}, token: {token}")
+        token = job.gltokens.filter(reset__lt=now()).filter(instance=self.repo.instance).first()
+        logger.info(f"Running GitLabRaw intention: {self.repo.instance}/{self.repo.owner}/{self.repo.repo}, token: {token}")
         if not token:
             logger.error(f'Token not found for intention {self}')
             raise Job.StopException
         handler = self._create_log_handler(job)
         try:
             global_logger.addHandler(handler)
-            runner = GitLabRaw(url=self.repo.url, token=token.token)
+            runner = GitLabRaw(url=self.repo.url, token=token.token, endpoint=self.repo.instance.endpoint)
             output = runner.run()
         except Exception as e:
             logger.error(f"Error running GitLabRaw intention {str(e)}")

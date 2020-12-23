@@ -54,7 +54,7 @@ class IAddGLOwner(Intention):
     # GitLab owner to get the repositories
     owner = models.CharField(max_length=128)
     # GitLab instance
-    instance = models.ForeignKey(GLInstance, on_delete=models.CASCADE)
+    instance = models.ForeignKey(GLInstance, on_delete=models.CASCADE, to_field='name', default='GitLab')
     # Project in which this owner should be added
     project = models.ForeignKey(to=Project, on_delete=models.CASCADE)
     # Collect git repositories
@@ -134,7 +134,7 @@ class IAddGLOwner(Intention):
         :param worker: Worker willing to create the job.
         :returns:      Job created by the worker, or None
         """
-        tokens = self.user.gltokens.all()  # We ignore the limit for owner request
+        tokens = self.user.gltokens.filter(instance=self.instance).all()  # We ignore the limit for owner request
         # Only create the job if there is at least one token
         if tokens:
             job = super().create_job(worker)
@@ -259,6 +259,7 @@ class IAddGLOwner(Intention):
                                            arch_job=arch_job,
                                            owner=self.owner,
                                            forks=self.forks,
+                                           instance=self.instance,
                                            project=self.project,
                                            commits=self.commits,
                                            issues=self.issues,
@@ -269,6 +270,7 @@ class IAddGLOwner(Intention):
 class IAddGLOwnerArchived(ArchivedIntention):
     intention_id = models.IntegerField()
     owner = models.CharField(max_length=128)
+    instance = models.ForeignKey(GLInstance, on_delete=models.CASCADE, to_field='name', default='GitLab')
     project = models.ForeignKey(to=Project, on_delete=models.SET_NULL, null=True)
     commits = models.BooleanField(default=True)
     forks = models.BooleanField(default=True)

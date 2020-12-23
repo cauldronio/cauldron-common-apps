@@ -15,4 +15,4 @@ def analyze_git_repo_obj(user, git_repo):
     raw, _ = IGitRaw.objects.get_or_create(user=user, repo=git_repo)
     enrich, _ = IGitEnrich.objects.get_or_create(user=user, repo=git_repo)
     enrich.previous.add(raw)
-    return git_repo
+    return True

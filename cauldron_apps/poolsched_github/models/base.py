@@ -32,7 +32,8 @@ class GHRepo(models.Model):
     # GitHub instance
     instance = models.ForeignKey(
         GHInstance, on_delete=models.SET_NULL,
-        default=None, null=True, blank=True)
+        default=None, null=True, blank=True,
+        to_field='name')
     # When the repo was created in the scheduler
     created = models.DateTimeField(default=now, blank=True)
 
@@ -59,6 +60,8 @@ class GHToken(models.Model):
     # rate = models.IntegerField(default=0)
     # Rate limit reset, last time it was checked
     reset = models.DateTimeField(default=now)
+    # Instance for the token
+    instance = models.ForeignKey(GHInstance, on_delete=models.CASCADE, to_field='name', default='GitHub')
     # Owner of the token
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
