@@ -18,12 +18,14 @@ class Repository(models.Model):
     GIT = 'GI'
     GITHUB = 'GH'
     GITLAB = 'GL'
+    GNOME = 'GN'
     MEETUP = 'MU'
     UNKNOWN = 'UK'
     BACKEND_CHOICES = [
         (GIT, 'Git'),
         (GITHUB, 'GitHub'),
         (GITLAB, 'GitLab'),
+        (GNOME, 'Gnome'),
         (MEETUP, 'Meetup'),
     ]
     # Globals for the state of a repository
@@ -261,7 +263,10 @@ class GitLabRepository(Repository):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.backend = Repository.GITLAB
+        if self.instance.name == 'Gnome':
+            self.backend = Repository.GNOME
+        else:
+            self.backend = Repository.GITLAB
 
     def __str__(self):
         return f"{self.pk} - {self.owner}/{self.repo}"

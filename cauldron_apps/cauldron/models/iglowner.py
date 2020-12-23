@@ -205,7 +205,7 @@ class IAddGLOwner(Intention):
             for url in gl_urls:
                 owner, name = url.split('/')
                 logger.info(f"Adding GitLab {owner}/{name} to project {self.project.id}")
-                repo, created = GitLabRepository.objects.get_or_create(owner=owner, repo=name)
+                repo, created = GitLabRepository.objects.get_or_create(owner=owner, repo=name, instance=self.instance)
                 if not repo.repo_sched:
                     repo.link_sched_repo()
                 repo.projects.add(self.project)

@@ -68,7 +68,7 @@ class GitLabRaw(Backend):
 
 
 class GitLabEnrich(Backend):
-    def __init__(self, url):
+    def __init__(self, url, endpoint):
         super().__init__()
         projects = {'Project': {}}
         for section in BACKEND_SECTIONS:
@@ -76,6 +76,8 @@ class GitLabEnrich(Backend):
         with open(PROJECTS_FILE, 'w+') as f:
             json.dump(projects, f)
         self.config.set_param('projects', 'projects_file', PROJECTS_FILE)
+        for section in BACKEND_SECTIONS:
+            self.config.set_param(section, 'enterprise-url', endpoint)
 
     def run(self):
         """ Execute the analysis for this backend.

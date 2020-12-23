@@ -58,7 +58,8 @@ class Project(models.Model):
         total = self.repository_set.count()
         n_git = GitRepository.objects.filter(projects=self).count()
         n_github = GitHubRepository.objects.filter(projects=self).count()
-        n_gitlab = GitLabRepository.objects.filter(projects=self).count()
+        n_gitlab = GitLabRepository.objects.filter(projects=self, instance='GitLab').count()
+        n_gnome = GitLabRepository.objects.filter(projects=self, instance='Gnome').count()
         n_meetup = MeetupRepository.objects.filter(projects=self).count()
         running = self.repos_running()
 
@@ -82,6 +83,7 @@ class Project(models.Model):
             'git': n_git,
             'github': n_github,
             'gitlab': n_gitlab,
+            'gnome': n_gnome,
             'meetup': n_meetup,
             'project_csv': project_csv
         }
@@ -118,9 +120,13 @@ class Project(models.Model):
         gh_running = gh.filter(Q(repo_sched__ighraw__isnull=False) | Q(repo_sched__ighenrich__isnull=False))
         gh_finish = gh.filter(Q(repo_sched__ighraw__isnull=True) | Q(repo_sched__ighenrich__isnull=True))\
             .filter(Q(repo_sched__ighenricharchived__isnull=False) | Q(repo_sched__ighrawarchived__isnull=False))
-        gl = GitLabRepository.objects.filter(projects=self).filter(repo_sched__isnull=False)
+        gl = GitLabRepository.objects.filter(projects=self, instance='GitLab').filter(repo_sched__isnull=False)
         gl_running = gl.filter(Q(repo_sched__iglraw__isnull=False) | Q(repo_sched__iglenrich__isnull=False))
         gl_finish = gl.filter(Q(repo_sched__iglraw__isnull=True) | Q(repo_sched__iglenrich__isnull=True))\
+            .filter(Q(repo_sched__iglenricharchived__isnull=False) | Q(repo_sched__iglrawarchived__isnull=False))
+        gnome = GitLabRepository.objects.filter(projects=self, instance='Gnome').filter(repo_sched__isnull=False)
+        gnome_running = gnome.filter(Q(repo_sched__iglraw__isnull=False) | Q(repo_sched__iglenrich__isnull=False))
+        gnome_finish = gnome.filter(Q(repo_sched__iglraw__isnull=True) | Q(repo_sched__iglenrich__isnull=True))\
             .filter(Q(repo_sched__iglenricharchived__isnull=False) | Q(repo_sched__iglrawarchived__isnull=False))
         meetup = MeetupRepository.objects.filter(projects=self).filter(repo_sched__isnull=False)
         meetup_running = meetup.filter(Q(repo_sched__imeetupraw__isnull=False) | Q(repo_sched__imeetupenrich__isnull=False))
@@ -131,6 +137,7 @@ class Project(models.Model):
             'git': {'running': git_running, 'finish': git_finish},
             'github': {'running': gh_running, 'finish': gh_finish},
             'gitlab': {'running': gl_running, 'finish': gl_finish},
+            'gnome': {'running': gnome_running, 'finish': gnome_finish},
             'meetup': {'running': meetup_running, 'finish': meetup_finish}
         }
         return status

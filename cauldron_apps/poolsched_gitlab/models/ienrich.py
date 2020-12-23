@@ -106,7 +106,7 @@ class IGLEnrich(Intention):
         handler = self._create_log_handler(job)
         try:
             global_logger.addHandler(handler)
-            runner = GitLabEnrich(url=self.repo.url)
+            runner = GitLabEnrich(url=self.repo.url, endpoint=self.repo.instance.endpoint)
             output = runner.run()
         except Exception as e:
             logger.error(f"Error: {e}")

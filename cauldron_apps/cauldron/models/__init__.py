@@ -52,10 +52,8 @@ class MeetupUser(models.Model):
     photo = models.URLField()
 
 
-class SHTask(models.Model):
-    # MUST BE UTC DATE
-    scheduled_date = models.DateTimeField()
-    started_date = models.DateTimeField(null=True)
-    completed_date = models.DateTimeField(null=True)
-    done = models.BooleanField(default=False)
-    log_file = models.CharField(max_length=255, blank=True)
+class GnomeUser(models.Model):
+    BACKEND_NAME = 'gnome'
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, unique=True)
+    username = models.CharField(max_length=100)
+    photo = models.URLField()
