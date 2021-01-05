@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'cauldron_apps.poolsched_merge_identities',
     'cauldron_apps.cauldron',
     'cauldron_apps.poolsched_export',
+    'cauldron_apps.cauldron_actions',
 ]
 
 MIDDLEWARE = [

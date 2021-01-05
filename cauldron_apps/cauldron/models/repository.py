@@ -8,6 +8,7 @@ from cauldron_apps.poolsched_gitlab import models as gitlab_models
 from cauldron_apps.poolsched_gitlab import api as gitlab_api
 from cauldron_apps.poolsched_meetup import models as meetup_models
 from cauldron_apps.poolsched_meetup import api as meetup_api
+from cauldron_apps.cauldron_actions import models as action_models
 
 from poolsched import models as sched_models
 
@@ -75,6 +76,10 @@ class Repository(models.Model):
     def refresh(self, user):
         """Try to refresh the repository.
         Return whether the repository is going to be refreshed or not"""
+        raise NotImplementedError
+
+    def create_remove_action(self, project):
+        """Create action of removing a repository from a project"""
         raise NotImplementedError
 
 
@@ -159,6 +164,11 @@ class GitRepository(Repository):
         """Remove all the intentions of this user related with this repository"""
         self.repo_sched.igitraw_set.filter(user=user, job=None).delete()
         self.repo_sched.igitenrich_set.filter(user=user, job=None).delete()
+
+    def create_remove_action(self, project):
+        """Create action of removing a repository from a project"""
+        action_models.RemoveGitRepoAction.objects.create(project=project, creator=project.creator,
+                                                         repository=self)
 
 
 class GitHubRepository(Repository):
@@ -246,6 +256,11 @@ class GitHubRepository(Repository):
         """Remove all the intentions of this user related with this repository"""
         self.repo_sched.ighraw_set.filter(user=user, job=None).delete()
         self.repo_sched.ighenrich_set.filter(user=user, job=None).delete()
+
+    def create_remove_action(self, project):
+        """Create action of removing a repository from a project"""
+        action_models.RemoveGitHubRepoAction.objects.create(project=project, creator=project.creator,
+                                                            repository=self)
 
 
 class GitLabRepository(Repository):
@@ -339,6 +354,12 @@ class GitLabRepository(Repository):
             date = None
         return date
 
+    def create_remove_action(self, project):
+        """Create action of removing a repository from a project"""
+        action_models.RemoveGitLabRepoAction.objects.create(project=project, creator=project.creator,
+                                                            repository=self)
+
+
 
 class MeetupRepository(Repository):
     group = models.CharField(max_length=100, unique=True)
@@ -421,3 +442,8 @@ class MeetupRepository(Repository):
         """Remove all the intentions of this user related with this repository"""
         self.repo_sched.imeetupraw_set.filter(user=user, job=None).delete()
         self.repo_sched.imeetupenrich_set.filter(user=user, job=None).delete()
+
+    def create_remove_action(self, project):
+        """Create action of removing a repository from a project"""
+        action_models.RemoveMeetupRepoAction.objects.create(project=project, creator=project.creator,
+                                                            repository=self)
