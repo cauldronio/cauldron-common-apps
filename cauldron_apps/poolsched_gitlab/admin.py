@@ -86,13 +86,16 @@ class GHGLRepositoryAdmin(admin.ModelAdmin):
 
 @admin.register(GLToken)
 class TokenAdmin(admin.ModelAdmin):
-    list_display = ('id', 'token', 'reset', user_name, 'job_count')
-    search_fields = ('id', 'repo')
+    list_display = ('id', 'token', 'reset', user_name, 'job_count', 'instance_name')
+    search_fields = ('id', 'user__first_name')
     list_filter = ('reset',)
     ordering = ('id',)
 
     def job_count(self, obj):
         return obj.jobs.count()
+
+    def instance_name(self, obj):
+        return obj.instance.name
 
 
 @admin.register(IGLIssueAutoRefresh, IGLMergeAutoRefresh)
