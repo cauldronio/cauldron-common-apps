@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 
 from .models import IAddGHOwner, IAddGLOwner, IAddGHOwnerArchived, IAddGLOwnerArchived, \
     Project, Repository, GitRepository, GitHubRepository, GitLabRepository, MeetupRepository, \
-    UserWorkspace, ProjectRole, AnonymousUser
+    UserWorkspace, ProjectRole, AnonymousUser, OauthUser
 
 
 User = get_user_model()
@@ -242,3 +242,10 @@ class ArchivedIntentionAdmin(admin.ModelAdmin):
     search_fields = ('id', 'user__first_name', 'status', 'owner', 'project__name')
     list_filter = ('status', 'created', 'completed')
     ordering = ('completed', )
+
+
+@admin.register(OauthUser)
+class OauthUserAdmin(admin.ModelAdmin):
+    list_display = ('id', user_name, 'backend', 'username', 'photo')
+    search_fields = ('id', 'backend', 'username', 'user__first_name')
+    list_filter = ('backend',)

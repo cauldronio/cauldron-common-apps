@@ -31,29 +31,11 @@ class UserWorkspace(models.Model):
     backend_role = models.CharField(max_length=100)
 
 
-class GithubUser(models.Model):
-    BACKEND_NAME = 'github'
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, unique=True)
+class OauthUser(models.Model):
+    backend = models.CharField(max_length=20)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     username = models.CharField(max_length=100)
     photo = models.URLField()
 
-
-class GitlabUser(models.Model):
-    BACKEND_NAME = 'gitlab'
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, unique=True)
-    username = models.CharField(max_length=100)
-    photo = models.URLField()
-
-
-class MeetupUser(models.Model):
-    BACKEND_NAME = 'meetup'
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, unique=True)
-    username = models.CharField(max_length=100)
-    photo = models.URLField()
-
-
-class GnomeUser(models.Model):
-    BACKEND_NAME = 'gnome'
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, unique=True)
-    username = models.CharField(max_length=100)
-    photo = models.URLField()
+    class Meta:
+        unique_together = ("username", "backend")
