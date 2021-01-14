@@ -111,37 +111,6 @@ class Project(models.Model):
             .count()
         return git_running + gh_running + gl_running + meetup_running
 
-    def repos_status(self):
-        git = GitRepository.objects.filter(projects=self).filter(repo_sched__isnull=False)
-        git_running = git.filter(Q(repo_sched__igitraw__isnull=False) | Q(repo_sched__igitenrich__isnull=False))
-        git_finish = git.filter(Q(repo_sched__igitraw__isnull=True) | Q(repo_sched__igitenrich__isnull=True))\
-            .filter(Q(repo_sched__igitenricharchived__isnull=False) | Q(repo_sched__igitrawarchived__isnull=False))
-        gh = GitHubRepository.objects.filter(projects=self).filter(repo_sched__isnull=False)
-        gh_running = gh.filter(Q(repo_sched__ighraw__isnull=False) | Q(repo_sched__ighenrich__isnull=False))
-        gh_finish = gh.filter(Q(repo_sched__ighraw__isnull=True) | Q(repo_sched__ighenrich__isnull=True))\
-            .filter(Q(repo_sched__ighenricharchived__isnull=False) | Q(repo_sched__ighrawarchived__isnull=False))
-        gl = GitLabRepository.objects.filter(projects=self, instance='GitLab').filter(repo_sched__isnull=False)
-        gl_running = gl.filter(Q(repo_sched__iglraw__isnull=False) | Q(repo_sched__iglenrich__isnull=False))
-        gl_finish = gl.filter(Q(repo_sched__iglraw__isnull=True) | Q(repo_sched__iglenrich__isnull=True))\
-            .filter(Q(repo_sched__iglenricharchived__isnull=False) | Q(repo_sched__iglrawarchived__isnull=False))
-        gnome = GitLabRepository.objects.filter(projects=self, instance='Gnome').filter(repo_sched__isnull=False)
-        gnome_running = gnome.filter(Q(repo_sched__iglraw__isnull=False) | Q(repo_sched__iglenrich__isnull=False))
-        gnome_finish = gnome.filter(Q(repo_sched__iglraw__isnull=True) | Q(repo_sched__iglenrich__isnull=True))\
-            .filter(Q(repo_sched__iglenricharchived__isnull=False) | Q(repo_sched__iglrawarchived__isnull=False))
-        meetup = MeetupRepository.objects.filter(projects=self).filter(repo_sched__isnull=False)
-        meetup_running = meetup.filter(Q(repo_sched__imeetupraw__isnull=False) | Q(repo_sched__imeetupenrich__isnull=False))
-        meetup_finish = meetup.filter(Q(repo_sched__imeetupraw__isnull=True) | Q(repo_sched__imeetupenrich__isnull=True))\
-            .filter(Q(repo_sched__imeetupenricharchived__isnull=False) | Q(repo_sched__imeetuprawarchived__isnull=False))
-
-        status = {
-            'git': {'running': git_running, 'finish': git_finish},
-            'github': {'running': gh_running, 'finish': gh_finish},
-            'gitlab': {'running': gl_running, 'finish': gl_finish},
-            'gnome': {'running': gnome_running, 'finish': gnome_finish},
-            'meetup': {'running': meetup_running, 'finish': meetup_finish}
-        }
-        return status
-
     def update_elastic_role(self):
         odfe_api = OpendistroApi(ELASTIC_URL, settings.ES_ADMIN_PASSWORD)
         permissions = []

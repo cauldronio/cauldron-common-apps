@@ -18,6 +18,9 @@ class GLInstance(models.Model):
 
     name = models.CharField(max_length=40, unique=True)
     endpoint = models.CharField(max_length=200)
+    slug = models.CharField(max_length=40)
+    client_id = models.CharField(max_length=64, null=True, default=None)
+    client_secret = models.CharField(max_length=64, null=True, default=None)
 
     class Meta:
         db_table = TABLE_PREFIX + 'instance'

@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
 
+from cauldron_apps.poolsched_gitlab.models import GLInstance
 from .models import IAddGHOwner, IAddGLOwner, IAddGHOwnerArchived, IAddGLOwnerArchived, \
     Project, Repository, GitRepository, GitHubRepository, GitLabRepository, MeetupRepository, \
     UserWorkspace, ProjectRole, AnonymousUser, OauthUser
@@ -62,10 +63,18 @@ class IsAnonymousUser(admin.SimpleListFilter):
 
 
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('id', 'first_name', 'is_staff', 'authenticated_user', 'num_projects',
-                    'gh_token', 'gl_token', 'meetup_token', 'gnome_token')
     list_filter = ('is_staff', IsAnonymousUser)
     search_fields = ('id', 'first_name')
+
+    def get_list_display(self, request):
+        display = ['id', 'first_name', 'is_staff', 'authenticated_user', 'num_projects', 'gh_token', 'meetup_token']
+        for instance in GLInstance.objects.values_list('name', flat=True):
+            def _fn(obj):
+                return obj.gltokens.filter(instance=instance).exists()
+            _fn.short_description = f'{instance} Token'
+            _fn.boolean = True
+            display.append(_fn)
+        return display
 
     def authenticated_user(self, obj):
         return not hasattr(obj, 'anonymoususer')
@@ -75,17 +84,9 @@ class UserAdmin(admin.ModelAdmin):
         return obj.ghtokens.exists()
     gh_token.boolean = True
 
-    def gl_token(self, obj):
-        return obj.gltokens.filter(instance='GitLab').exists()
-    gl_token.boolean = True
-
     def meetup_token(self, obj):
         return obj.meetuptokens.exists()
     meetup_token.boolean = True
-
-    def gnome_token(self, obj):
-        return obj.gltokens.filter(instance='Gnome').exists()
-    gnome_token.boolean = True
 
     def num_projects(self, obj):
         return obj.project_set.count()
@@ -103,17 +104,25 @@ admin.site.register(User, UserAdmin)
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'created', 'creator_name',
-                    'github_repos', 'gitlab_repos', 'meetup_repos', 'gnome_repos')
     list_filter = ('created', ProjectDataSources)
     search_fields = ('id', 'name', 'creator__first_name')
     ordering = ('id',)
+
+    def get_list_display(self, request):
+        display = ['id', 'name', 'created', 'creator_name', 'git_repos', 'github_repos', 'meetup_repos']
+        for instance in GLInstance.objects.values_list('name', flat=True):
+            def _fn(obj):
+                return GitLabRepository.objects.filter(projects=obj, instance=instance).count()
+            _fn.short_description = f'{instance} repos'
+            display.append(_fn)
+        return display
 
     def creator_name(self, obj):
         try:
             return obj.creator.first_name
         except AttributeError:
             return None
+    creator_name.admin_order_field = 'creator__first_name'
 
     def git_repos(self, obj):
         return GitRepository.objects.filter(projects=obj).count()
@@ -121,14 +130,8 @@ class ProjectAdmin(admin.ModelAdmin):
     def github_repos(self, obj):
         return GitHubRepository.objects.filter(projects=obj).count()
 
-    def gitlab_repos(self, obj):
-        return GitLabRepository.objects.filter(projects=obj, instance='GitLab').count()
-
     def meetup_repos(self, obj):
         return MeetupRepository.objects.filter(projects=obj).count()
-
-    def gnome_repos(self, obj):
-        return GitLabRepository.objects.filter(projects=obj, instance='Gnome').count()
 
     def get_actions(self, request):
         actions = super().get_actions(request)
