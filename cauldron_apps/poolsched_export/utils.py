@@ -13,4 +13,4 @@ def get_jwt_key(user, backend_roles):
         "user": user,
         "roles": backend_roles
     }
-    return jwt.encode(claims, settings.JWT_KEY, algorithm='RS256').decode('utf-8')
+    return jwt.encode(claims, settings.JWT_KEY, algorithm='RS256')
