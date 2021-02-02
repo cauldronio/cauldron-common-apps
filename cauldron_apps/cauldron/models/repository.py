@@ -20,6 +20,7 @@ class Repository(models.Model):
     GITHUB = 'GH'
     GITLAB = 'GL'
     GNOME = 'GN'
+    KDE = 'KD'
     MEETUP = 'MU'
     UNKNOWN = 'UK'
     BACKEND_CHOICES = [
@@ -27,6 +28,7 @@ class Repository(models.Model):
         (GITHUB, 'GitHub'),
         (GITLAB, 'GitLab'),
         (GNOME, 'Gnome'),
+        (KDE, 'KDE'),
         (MEETUP, 'Meetup'),
     ]
     # Globals for the state of a repository
@@ -280,6 +282,8 @@ class GitLabRepository(Repository):
         super().__init__(*args, **kwargs)
         if self.instance.name == 'Gnome':
             self.backend = Repository.GNOME
+        elif self.instance.name == 'KDE':
+            self.backend = Repository.KDE
         else:
             self.backend = Repository.GITLAB
 

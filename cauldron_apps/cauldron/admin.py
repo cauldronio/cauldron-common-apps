@@ -69,8 +69,8 @@ class UserAdmin(admin.ModelAdmin):
     def get_list_display(self, request):
         display = ['id', 'first_name', 'is_staff', 'authenticated_user', 'num_projects', 'gh_token', 'meetup_token']
         for instance in GLInstance.objects.values_list('name', flat=True):
-            def _fn(obj):
-                return obj.gltokens.filter(instance=instance).exists()
+            def _fn(obj, inst=instance):
+                return obj.gltokens.filter(instance=inst).exists()
             _fn.short_description = f'{instance} Token'
             _fn.boolean = True
             display.append(_fn)
@@ -111,8 +111,8 @@ class ProjectAdmin(admin.ModelAdmin):
     def get_list_display(self, request):
         display = ['id', 'name', 'created', 'creator_name', 'git_repos', 'github_repos', 'meetup_repos']
         for instance in GLInstance.objects.values_list('name', flat=True):
-            def _fn(obj):
-                return GitLabRepository.objects.filter(projects=obj, instance=instance).count()
+            def _fn(obj, inst=instance):
+                return GitLabRepository.objects.filter(projects=obj, instance=inst).count()
             _fn.short_description = f'{instance} repos'
             display.append(_fn)
         return display

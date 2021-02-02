@@ -60,6 +60,7 @@ class Project(models.Model):
         n_github = GitHubRepository.objects.filter(projects=self).count()
         n_gitlab = GitLabRepository.objects.filter(projects=self, instance='GitLab').count()
         n_gnome = GitLabRepository.objects.filter(projects=self, instance='Gnome').count()
+        n_kde = GitLabRepository.objects.filter(projects=self, instance='KDE').count()
         n_meetup = MeetupRepository.objects.filter(projects=self).count()
         running = self.repos_running()
 
@@ -84,6 +85,7 @@ class Project(models.Model):
             'github': n_github,
             'gitlab': n_gitlab,
             'gnome': n_gnome,
+            'kde': n_kde,
             'meetup': n_meetup,
             'project_csv': project_csv
         }

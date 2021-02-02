@@ -35,7 +35,7 @@ class OauthUser(models.Model):
     backend = models.CharField(max_length=20)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     username = models.CharField(max_length=100)
-    photo = models.URLField()
+    photo = models.URLField(null=True)
 
     class Meta:
         unique_together = ("username", "backend")
