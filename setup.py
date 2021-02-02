@@ -34,9 +34,14 @@ setup(
     ],
     install_requires=[
         "django>=3.0",
-        "django-model-utils>=4.0",
+        "mysqlclient",
         "sqlalchemy",
-        "PyGithub>=1.51,<2.0",
+        "django-model-utils>=4.0",
+        "PyGithub==1.54.1",
+        "cryptography>=3.2",
+        "pyjwt<2",
         "python-dateutil>=2.8.1,<3",
+        "python-gitlab",
+        "elasticsearch",
     ]
 )
