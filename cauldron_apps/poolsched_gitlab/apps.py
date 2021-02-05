@@ -7,20 +7,32 @@ import logging
 Logger = logging.getLogger(__name__)
 
 
-def load_gitlab_keys(app_config, **kwargs):
+def load_gitlab_instances(app_config, **kwargs):
     GLInstance = app_config.get_model('GLInstance')
     base_id = 'GL_CLIENT_ID_'
     base_secret = 'GL_CLIENT_SECRET_'
-    for instance in GLInstance.objects.all():
+    gitlab_instances = [
+        ("GitLab", "https://gitlab.com"),
+        ("Gnome", "https://gitlab.gnome.org"),
+        ("KDE", "https://invent.kde.org"),
+    ]
+
+    for instance in gitlab_instances:
+        name = instance[0]
+        endpoint = instance[1]
+
+        obj, _ = GLInstance.objects.get_or_create(name=name,
+                                                  defaults={'endpoint': endpoint,
+                                                            'slug': f'{name.lower()}'})
+
         try:
-            name = instance.name.upper()
-            instance.client_id = getattr(settings, f'{base_id}{name}')
-            instance.client_secret = getattr(settings, f'{base_secret}{name}')
-            instance.save()
-            Logger.info(f"Oauth key for {instance.name} loaded.")
+            obj.client_id = getattr(settings, f'{base_id}{name.upper()}')
+            obj.client_secret = getattr(settings, f'{base_secret}{name.upper()}')
+            obj.save()
+
+            Logger.info(f"{name} instance loaded.")
         except AttributeError:
-            if not instance.client_id or not instance.client_secret:
-                Logger.error(f"Oauth key for {instance.name} not set.")
+            Logger.error(f"{name} instance not set.")
 
 
 class CauldronGitlabConfig(AppConfig):
@@ -28,4 +40,4 @@ class CauldronGitlabConfig(AppConfig):
 
     def ready(self):
         # Load after the migration is done
-        post_migrate.connect(load_gitlab_keys, sender=self)
+        post_migrate.connect(load_gitlab_instances, sender=self)

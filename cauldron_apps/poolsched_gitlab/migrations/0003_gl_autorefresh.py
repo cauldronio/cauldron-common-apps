@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('poolsched', '0001_initial'),
-        ('poolsched_gitlab', '0002_gitlab_endpoint'),
+        ('poolsched_gitlab', '0001_initial'),
     ]
 
     operations = [

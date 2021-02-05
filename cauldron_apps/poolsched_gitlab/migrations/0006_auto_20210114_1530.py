@@ -4,15 +4,10 @@ from django.db import migrations, models
 from django.db.models.functions import Lower
 
 
-def migrate_slug(apps, schema_editor):
-    GLInstance = apps.get_model("poolsched_gitlab", "GLInstance")
-    GLInstance.objects.all().update(slug=Lower('name'))
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('poolsched_gitlab', '0005_gnome_endpoint'),
+        ('poolsched_gitlab', '0004_auto_20201221_1619'),
     ]
 
     operations = [
@@ -32,5 +27,4 @@ class Migration(migrations.Migration):
             field=models.CharField(default=None, max_length=40),
             preserve_default=False,
         ),
-        migrations.RunPython(migrate_slug)
     ]
