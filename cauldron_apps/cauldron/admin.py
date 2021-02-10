@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from cauldron_apps.poolsched_gitlab.models import GLInstance
 from .models import IAddGHOwner, IAddGLOwner, IAddGHOwnerArchived, IAddGLOwnerArchived, \
     Project, Repository, GitRepository, GitHubRepository, GitLabRepository, MeetupRepository, \
-    UserWorkspace, ProjectRole, AnonymousUser, OauthUser
+    UserWorkspace, ProjectRole, AnonymousUser, OauthUser, AuthorizedBackendUser
 
 
 User = get_user_model()
@@ -251,4 +251,11 @@ class ArchivedIntentionAdmin(admin.ModelAdmin):
 class OauthUserAdmin(admin.ModelAdmin):
     list_display = ('id', user_name, 'backend', 'username', 'photo')
     search_fields = ('id', 'backend', 'username', 'user__first_name')
+    list_filter = ('backend',)
+
+
+@admin.register(AuthorizedBackendUser)
+class AuthorizedBackendUserAdmin(admin.ModelAdmin):
+    list_display = ('id', 'backend', 'username')
+    search_fields = ('id', 'backend', 'username')
     list_filter = ('backend',)

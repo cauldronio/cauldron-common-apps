@@ -20,6 +20,18 @@ class AnonymousUser(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, unique=True)
 
 
+class AuthorizedBackendUser(models.Model):
+    """
+    Identify if a user has permissions to access Cauldron.
+    Admin users are not necessarily to be in this model.
+    """
+    backend = models.CharField(max_length=20)
+    username = models.CharField(max_length=100)
+
+    class Meta:
+        unique_together = ('username', 'backend')
+
+
 class UserWorkspace(models.Model):
     """
     This field indicates if the user has created the workspace
