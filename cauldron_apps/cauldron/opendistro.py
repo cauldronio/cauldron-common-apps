@@ -28,11 +28,11 @@ BACKEND_INDICES = {
     "gitlab": [
         {
             "name": "gitlab_enriched_index",
-            "url_field": "repository"
+            "url_field": "origin"
         },
         {
             "name": "gitlab_mrs_enriched_index",
-            "url_field": "repository"
+            "url_field": "origin"
         }
     ],
     "meetup": [
