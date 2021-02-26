@@ -1,4 +1,7 @@
+import csv
+
 from django.contrib import admin
+from django.http import HttpResponse
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
 
@@ -107,6 +110,7 @@ class ProjectAdmin(admin.ModelAdmin):
     list_filter = ('created', ProjectDataSources)
     search_fields = ('id', 'name', 'creator__first_name')
     ordering = ('id',)
+    actions = ['export_as_csv']
 
     def get_list_display(self, request):
         display = ['id', 'name', 'created', 'creator_name', 'git_repos', 'github_repos', 'meetup_repos']
@@ -132,6 +136,41 @@ class ProjectAdmin(admin.ModelAdmin):
 
     def meetup_repos(self, obj):
         return MeetupRepository.objects.filter(projects=obj).count()
+
+    def export_as_csv(self, request, queryset):
+        meta = self.model._meta
+        field_names = ['id', 'name', 'created', 'creator_name', 'Git', 'GitHub', 'Meetup']
+        gl_instance_names = GLInstance.objects.values_list('name', flat=True)
+        field_names.extend(gl_instance_names)
+
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename={}.csv'.format(meta)
+        writer = csv.writer(response)
+
+        writer.writerow(field_names)
+        for obj in queryset:
+            gl_instance_values = []
+            for instance_name in gl_instance_names:
+                instance = GLInstance.objects.get(name=instance_name)
+                repos = GitLabRepository.objects.filter(projects=obj, instance=instance).count()
+                gl_instance_values.append(repos)
+
+            row_values = [
+                obj.id,
+                obj.name,
+                obj.created,
+                self.creator_name(obj),
+                self.git_repos(obj),
+                self.github_repos(obj),
+                self.meetup_repos(obj),
+            ]
+            row_values.extend(gl_instance_values)
+
+            row = writer.writerow(row_values)
+
+        return response
+
+    export_as_csv.short_description = "Export Selected"
 
     def get_actions(self, request):
         actions = super().get_actions(request)
