@@ -15,6 +15,17 @@ class AddGitRepoAction(Action):
     class Meta:
         verbose_name_plural = "Add Git repo actions"
 
+    @property
+    def name_ui(self):
+        return f"Add <b>{self.repository.url}</b> git repository"
+
+    @property
+    def data_source_ui(self):
+        return 'git'
+
+    def run(self):
+        self.repository.projects.add(self.project)
+
 
 class RemoveGitRepoAction(Action):
     """
@@ -28,3 +39,14 @@ class RemoveGitRepoAction(Action):
 
     class Meta:
         verbose_name_plural = "Remove Git repo actions"
+
+    @property
+    def name_ui(self):
+        return f"Remove <b>{self.repository.url}</b> git repository"
+
+    @property
+    def data_source_ui(self):
+        return 'git'
+
+    def run(self):
+        self.repository.projects.remove(self.project)

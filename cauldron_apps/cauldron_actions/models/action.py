@@ -26,3 +26,14 @@ class Action(models.Model):
     class Meta:
         verbose_name_plural = "Actions"
         abstract = False
+
+    @property
+    def name_ui(self):
+        raise NotImplementedError
+
+    @property
+    def data_source_ui(self):
+        raise NotImplementedError
+
+    def run(self):
+        raise NotImplementedError

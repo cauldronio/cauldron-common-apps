@@ -15,6 +15,14 @@ class AddMeetupRepoAction(Action):
     class Meta:
         verbose_name_plural = "Add Meetup repo actions"
 
+    @property
+    def name_ui(self):
+        return f"Add <b>{self.repository.group}</b> meetup group"
+
+    @property
+    def data_source_ui(self):
+        return 'meetup'
+
 
 class RemoveMeetupRepoAction(Action):
     """
@@ -28,3 +36,11 @@ class RemoveMeetupRepoAction(Action):
 
     class Meta:
         verbose_name_plural = "Remove Meetup repo actions"
+
+    @property
+    def name_ui(self):
+        return f"Remove <b>{self.repository.group}</b> meetup group"
+
+    @property
+    def data_source_ui(self):
+        return 'meetup'

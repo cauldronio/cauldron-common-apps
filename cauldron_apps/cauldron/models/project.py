@@ -2,6 +2,7 @@ import os
 from datetime import datetime, timedelta
 
 import pytz
+from django.apps import apps
 from django.db import models
 from django.conf import settings
 from django.db.models import Q
@@ -74,8 +75,10 @@ class Project(models.Model):
                                        'link': os.path.join(PATH_STATIC_FILES, git_csv.location)}
         except models.ObjectDoesNotExist:
             pass
-
         project_csv['generating'] = self.iexport_git_csv.exists()
+
+        IRefreshActions = apps.get_model('cauldron_actions.IRefreshActions')
+        refresh_actions = IRefreshActions.objects.filter(project=self).exists()
 
         summary = {
             'id': self.id,
@@ -87,7 +90,8 @@ class Project(models.Model):
             'gnome': n_gnome,
             'kde': n_kde,
             'meetup': n_meetup,
-            'project_csv': project_csv
+            'project_csv': project_csv,
+            'refresh_actions': refresh_actions
         }
         return summary
 

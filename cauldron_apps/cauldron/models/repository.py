@@ -1,4 +1,5 @@
 from django.db import models
+from django.apps import apps
 
 from cauldron_apps.poolsched_git import models as git_models
 from cauldron_apps.poolsched_git import api as git_api
@@ -8,7 +9,6 @@ from cauldron_apps.poolsched_gitlab import models as gitlab_models
 from cauldron_apps.poolsched_gitlab import api as gitlab_api
 from cauldron_apps.poolsched_meetup import models as meetup_models
 from cauldron_apps.poolsched_meetup import api as meetup_api
-from cauldron_apps.cauldron_actions import models as action_models
 
 from poolsched import models as sched_models
 
@@ -169,7 +169,8 @@ class GitRepository(Repository):
 
     def create_remove_action(self, project):
         """Create action of removing a repository from a project"""
-        action_models.RemoveGitRepoAction.objects.create(project=project, creator=project.creator,
+        RemoveGitRepoAction = apps.get_model('cauldron_actions.RemoveGitRepoAction')
+        RemoveGitRepoAction.objects.create(project=project, creator=project.creator,
                                                          repository=self)
 
 
@@ -261,7 +262,8 @@ class GitHubRepository(Repository):
 
     def create_remove_action(self, project):
         """Create action of removing a repository from a project"""
-        action_models.RemoveGitHubRepoAction.objects.create(project=project, creator=project.creator,
+        RemoveGitHubRepoAction = apps.get_model('cauldron_actions.RemoveGitHubRepoAction')
+        RemoveGitHubRepoAction.objects.create(project=project, creator=project.creator,
                                                             repository=self)
 
 
@@ -360,7 +362,8 @@ class GitLabRepository(Repository):
 
     def create_remove_action(self, project):
         """Create action of removing a repository from a project"""
-        action_models.RemoveGitLabRepoAction.objects.create(project=project, creator=project.creator,
+        RemoveGitLabRepoAction = apps.get_model('cauldron_actions.RemoveGitLabRepoAction')
+        RemoveGitLabRepoAction.objects.create(project=project, creator=project.creator,
                                                             repository=self)
 
 
@@ -449,5 +452,6 @@ class MeetupRepository(Repository):
 
     def create_remove_action(self, project):
         """Create action of removing a repository from a project"""
-        action_models.RemoveMeetupRepoAction.objects.create(project=project, creator=project.creator,
+        RemoveMeetupRepoAction = apps.get_model('cauldron_actions.RemoveMeetupRepoAction')
+        RemoveMeetupRepoAction.objects.create(project=project, creator=project.creator,
                                                             repository=self)
