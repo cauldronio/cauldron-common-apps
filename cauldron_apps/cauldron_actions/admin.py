@@ -24,7 +24,8 @@ class AddOwnerActionAdmin(admin.ModelAdmin):
 
 
 @admin.register(models.AddGitRepoAction, models.AddGitHubRepoAction,
-                models.AddGitLabRepoAction, models.AddMeetupRepoAction)
+                models.AddGitLabRepoAction, models.AddMeetupRepoAction,
+                models.AddStackExchangeRepoAction)
 class AddRepoActionAdmin(admin.ModelAdmin):
     list_display = ('id', 'created', creator_name, 'project', 'repository')
     search_fields = ('id', 'creator__first_name', 'project__id')
@@ -32,7 +33,8 @@ class AddRepoActionAdmin(admin.ModelAdmin):
 
 
 @admin.register(models.RemoveGitRepoAction, models.RemoveMeetupRepoAction,
-                models.RemoveGitHubRepoAction, models.RemoveGitLabRepoAction)
+                models.RemoveGitHubRepoAction, models.RemoveGitLabRepoAction,
+                models.RemoveStackExchangeRepoAction)
 class RemoveRepoActionAdmin(admin.ModelAdmin):
     list_display = ('id', 'created', creator_name, 'project', 'repository')
     search_fields = ('id', 'creator__first_name', 'project__id')

@@ -41,7 +41,14 @@ BACKEND_INDICES = {
             "backend": "meetup",
             "url_field": "tag"
         }
-    ]
+    ],
+    'stackexchange': [
+        {
+            "name": "stackexchange_enriched_index",
+            "backend": "stackexchange",
+            "url_field": "tag"
+        }
+    ],
 }
 
 

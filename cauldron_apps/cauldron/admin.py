@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from cauldron_apps.poolsched_gitlab.models import GLInstance
 from .models import IAddGHOwner, IAddGLOwner, IAddGHOwnerArchived, IAddGLOwnerArchived, \
     Project, Repository, GitRepository, GitHubRepository, GitLabRepository, MeetupRepository, \
-    UserWorkspace, ProjectRole, AnonymousUser, OauthUser, AuthorizedBackendUser
+    StackExchangeRepository, UserWorkspace, ProjectRole, AnonymousUser, OauthUser, AuthorizedBackendUser
 
 
 User = get_user_model()
@@ -70,7 +70,8 @@ class UserAdmin(admin.ModelAdmin):
     search_fields = ('id', 'first_name')
 
     def get_list_display(self, request):
-        display = ['id', 'first_name', 'is_staff', 'authenticated_user', 'num_projects', 'gh_token', 'meetup_token']
+        display = ['id', 'first_name', 'is_staff', 'authenticated_user', 'num_projects',
+                   'gh_token', 'meetup_token', 'stack_token']
         for instance in GLInstance.objects.values_list('name', flat=True):
             def _fn(obj, inst=instance):
                 return obj.gltokens.filter(instance=inst).exists()
@@ -90,6 +91,10 @@ class UserAdmin(admin.ModelAdmin):
     def meetup_token(self, obj):
         return obj.meetuptokens.exists()
     meetup_token.boolean = True
+
+    def stack_token(self, obj):
+        return obj.stackexchangetokens.exists()
+    stack_token.boolean = True
 
     def num_projects(self, obj):
         return obj.project_set.count()
@@ -113,7 +118,7 @@ class ProjectAdmin(admin.ModelAdmin):
     actions = ['export_as_csv']
 
     def get_list_display(self, request):
-        display = ['id', 'name', 'created', 'creator_name', 'git_repos', 'github_repos', 'meetup_repos']
+        display = ['id', 'name', 'created', 'creator_name', 'git_repos', 'github_repos', 'meetup_repos', 'stack_repos']
         for instance in GLInstance.objects.values_list('name', flat=True):
             def _fn(obj, inst=instance):
                 return GitLabRepository.objects.filter(projects=obj, instance=inst).count()
@@ -137,9 +142,12 @@ class ProjectAdmin(admin.ModelAdmin):
     def meetup_repos(self, obj):
         return MeetupRepository.objects.filter(projects=obj).count()
 
+    def stack_repos(self, obj):
+        return StackExchangeRepository.objects.filter(projects=obj).count()
+
     def export_as_csv(self, request, queryset):
         meta = self.model._meta
-        field_names = ['id', 'name', 'created', 'creator_name', 'Git', 'GitHub', 'Meetup']
+        field_names = ['id', 'name', 'created', 'creator_name', 'Git', 'GitHub', 'Meetup', 'StackExchange']
         gl_instance_names = GLInstance.objects.values_list('name', flat=True)
         field_names.extend(gl_instance_names)
 
@@ -163,6 +171,7 @@ class ProjectAdmin(admin.ModelAdmin):
                 self.git_repos(obj),
                 self.github_repos(obj),
                 self.meetup_repos(obj),
+                self.stack_repos(obj),
             ]
             row_values.extend(gl_instance_values)
 
@@ -211,6 +220,13 @@ class GitLabRepositoryAdmin(admin.ModelAdmin):
 class MeetupRepositoryAdmin(admin.ModelAdmin):
     list_display = ('id', 'group', 'repo_sched', 'status', 'last_refresh')
     search_fields = ('id', 'group')
+    ordering = ('id',)
+
+
+@admin.register(StackExchangeRepository)
+class StackExchangeRepositoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'site', 'tagged', 'repo_sched', 'status', 'last_refresh')
+    search_fields = ('id', 'site', 'tagged')
     ordering = ('id',)
 
 

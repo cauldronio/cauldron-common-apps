@@ -9,6 +9,8 @@ from cauldron_apps.poolsched_gitlab import models as gitlab_models
 from cauldron_apps.poolsched_gitlab import api as gitlab_api
 from cauldron_apps.poolsched_meetup import models as meetup_models
 from cauldron_apps.poolsched_meetup import api as meetup_api
+from cauldron_apps.poolsched_stackexchange import models as stack_models
+from cauldron_apps.poolsched_stackexchange import api as stack_api
 
 from poolsched import models as sched_models
 
@@ -22,6 +24,7 @@ class Repository(models.Model):
     GNOME = 'GN'
     KDE = 'KD'
     MEETUP = 'MU'
+    STACK_EXCHANGE = 'SE'
     UNKNOWN = 'UK'
     BACKEND_CHOICES = [
         (GIT, 'Git'),
@@ -30,6 +33,7 @@ class Repository(models.Model):
         (GNOME, 'Gnome'),
         (KDE, 'KDE'),
         (MEETUP, 'Meetup'),
+        (STACK_EXCHANGE, 'StackExchange'),
     ]
     # Globals for the state of a repository
     IN_PROGRESS = 'In progress'
@@ -367,7 +371,6 @@ class GitLabRepository(Repository):
                                                             repository=self)
 
 
-
 class MeetupRepository(Repository):
     group = models.CharField(max_length=100, unique=True)
     parent = models.OneToOneField(to=Repository, on_delete=models.CASCADE, parent_link=True, related_name='meetup')
@@ -455,3 +458,96 @@ class MeetupRepository(Repository):
         RemoveMeetupRepoAction = apps.get_model('cauldron_actions.RemoveMeetupRepoAction')
         RemoveMeetupRepoAction.objects.create(project=project, creator=project.creator,
                                                             repository=self)
+
+
+class StackExchangeRepository(Repository):
+    site = models.CharField(max_length=100)
+    tagged = models.CharField(max_length=100)
+    parent = models.OneToOneField(to=Repository, on_delete=models.CASCADE, parent_link=True, related_name='stackexchange')
+    repo_sched = models.OneToOneField(stack_models.StackExchangeQuestionTag, on_delete=models.SET_NULL, null=True)
+
+    class Meta:
+        verbose_name_plural = "StackExchange tags"
+        unique_together = ['site', 'tagged']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.backend = Repository.STACK_EXCHANGE
+
+    def __str__(self):
+        return f"{self.pk} - {self.site}/{self.tagged}"
+
+    def link_sched_repo(self):
+        if not self.repo_sched:
+            repo_sched, _ = stack_models.StackExchangeQuestionTag.objects.get_or_create(site=self.site,
+                                                                                        tagged=self.tagged)
+            self.repo_sched = repo_sched
+            self.save()
+
+    @property
+    def datasource_url(self):
+        return self.repo_sched.url
+
+    @property
+    def repository_link(self):
+        tags = self.repo_sched.tagged.replace(';', '+')
+        return f'https://{self.site}/questions/tagged/{tags}'
+
+    def refresh(self, user):
+        """Try to refresh the repository.
+        Return whether the repository is going to be refreshed or not"""
+        return stack_api.analyze_stack_repo_obj(user, self.repo_sched)
+
+    @property
+    def status(self):
+        """Return status of the repository"""
+        intentions = self.repo_sched.istackexchangeraw_set.count() + \
+                     self.repo_sched.istackexchangeenrich_set.count()
+        if intentions > 0:
+            in_progress = self.repo_sched.istackexchangeraw_set.filter(job__worker__isnull=False).count() + \
+                        self.repo_sched.istackexchangeenrich_set.filter(job__worker__isnull=False).count()
+            if in_progress:
+                return self.IN_PROGRESS
+            else:
+                return self.PENDING
+        try:
+            enrich = self.repo_sched.istackexchangeenricharchived_set \
+                .latest('completed')
+            raw = self.repo_sched.istackexchangerawarchived_set \
+                .latest('completed')
+            ok = (enrich.status == sched_models.ArchivedIntention.OK) and \
+                 (raw.status == sched_models.ArchivedIntention.OK)
+        except stack_models.IStackExchangeEnrichArchived.DoesNotExist:
+            ok = False
+
+        if ok:
+            return self.ANALYZED
+        else:
+            return self.ERROR
+
+    @property
+    def last_refresh(self):
+        try:
+            date = stack_models.IStackExchangeEnrichArchived.objects.filter(question_tag=self.repo_sched).latest('completed').completed
+        except stack_models.IStackExchangeEnrichArchived.DoesNotExist:
+            date = None
+        return date
+
+    def get_intentions(self):
+        """Return a list of intentions related with this object"""
+        intentions = list(self.repo_sched.istackexchangeraw_set.all()) + list(self.repo_sched.istackexchangeenrich_set.all())
+        arch_intentions = list(self.repo_sched.istackexchangerawarchived_set.all()) + list(self.repo_sched.istackexchangeenricharchived_set.all())
+        intentions_sorted = sorted(intentions, key=lambda item: item.created, reverse=True)
+        arch_intentions_sorted = sorted(arch_intentions, key=lambda item: item.completed, reverse=True)
+        return {'intentions': intentions_sorted, 'arch_intentions': arch_intentions_sorted[:4]}
+
+    def remove_intentions(self, user):
+        """Remove all the intentions of this user related with this repository"""
+        self.repo_sched.istackexchangeraw_set.filter(user=user, job=None).delete()
+        self.repo_sched.istackexchangeenrich_set.filter(user=user, job=None).delete()
+
+    def create_remove_action(self, project):
+        """Create action of removing a repository from a project"""
+        RemoveStackExchangeRepoAction = apps.get_model('cauldron_actions.RemoveStackExchangeRepoAction')
+        RemoveStackExchangeRepoAction.objects.create(project=project, creator=project.creator,
+                                                     repository=self)

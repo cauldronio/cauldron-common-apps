@@ -1,7 +1,7 @@
 from .project import Project
 from .project import ProjectRole
 from .repository import Repository, GitRepository, GitHubRepository, \
-                        GitLabRepository, MeetupRepository
+                        GitLabRepository, MeetupRepository, StackExchangeRepository
 from .ighowner import IAddGHOwner, IAddGHOwnerArchived
 from .iglowner import IAddGLOwner, IAddGLOwnerArchived
 

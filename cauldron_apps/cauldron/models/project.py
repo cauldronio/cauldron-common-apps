@@ -7,7 +7,7 @@ from django.db import models
 from django.conf import settings
 from django.db.models import Q
 
-from .repository import GitHubRepository, GitLabRepository, MeetupRepository, GitRepository
+from .repository import GitHubRepository, GitLabRepository, MeetupRepository, GitRepository, StackExchangeRepository
 from ..opendistro import OpendistroApi, BACKEND_INDICES
 
 ELASTIC_URL = 'https://admin:{}@{}:{}'.format(settings.ES_ADMIN_PASSWORD,
@@ -63,6 +63,7 @@ class Project(models.Model):
         n_gnome = GitLabRepository.objects.filter(projects=self, instance='Gnome').count()
         n_kde = GitLabRepository.objects.filter(projects=self, instance='KDE').count()
         n_meetup = MeetupRepository.objects.filter(projects=self).count()
+        n_stack_exchange = StackExchangeRepository.objects.filter(projects=self).count()
         running = self.repos_running()
 
         project_csv = {
@@ -90,6 +91,7 @@ class Project(models.Model):
             'gnome': n_gnome,
             'kde': n_kde,
             'meetup': n_meetup,
+            'stackexchange': n_stack_exchange,
             'project_csv': project_csv,
             'refresh_actions': refresh_actions,
             'owner': self.creator
@@ -116,7 +118,10 @@ class Project(models.Model):
         meetup = MeetupRepository.objects.filter(projects=self).filter(repo_sched__isnull=False)
         meetup_running = meetup.filter(Q(repo_sched__imeetupraw__isnull=False) | Q(repo_sched__imeetupenrich__isnull=False))\
             .count()
-        return git_running + gh_running + gl_running + meetup_running
+        stack = StackExchangeRepository.objects.filter(projects=self).filter(repo_sched__isnull=False)
+        stack_running = stack.filter(Q(repo_sched__istackexchangeraw__isnull=False) | Q(repo_sched__istackexchangeenrich__isnull=False))\
+            .count()
+        return git_running + gh_running + gl_running + meetup_running + stack_running
 
     def update_elastic_role(self):
         odfe_api = OpendistroApi(ELASTIC_URL, settings.ES_ADMIN_PASSWORD)
@@ -135,6 +140,10 @@ class Project(models.Model):
             permissions.append(index_permissions)
         for index in BACKEND_INDICES['meetup']:
             url_list = [repo.datasource_url for repo in MeetupRepository.objects.filter(projects=self)]
+            index_permissions = OpendistroApi.create_index_permissions(url_list, index)
+            permissions.append(index_permissions)
+        for index in BACKEND_INDICES['stackexchange']:
+            url_list = [repo.datasource_url for repo in StackExchangeRepository.objects.filter(projects=self)]
             index_permissions = OpendistroApi.create_index_permissions(url_list, index)
             permissions.append(index_permissions)
         odfe_api.update_elastic_role(self.projectrole.role, permissions)
