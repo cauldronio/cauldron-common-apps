@@ -8,7 +8,8 @@ from django.contrib.auth import get_user_model
 from cauldron_apps.poolsched_gitlab.models import GLInstance
 from .models import IAddGHOwner, IAddGLOwner, IAddGHOwnerArchived, IAddGLOwnerArchived, \
     Project, Repository, GitRepository, GitHubRepository, GitLabRepository, MeetupRepository, \
-    StackExchangeRepository, UserWorkspace, ProjectRole, AnonymousUser, OauthUser, AuthorizedBackendUser
+    StackExchangeRepository, UserWorkspace, ProjectRole, AnonymousUser, OauthUser, AuthorizedBackendUser, \
+    BannerMessage
 
 
 User = get_user_model()
@@ -314,3 +315,13 @@ class AuthorizedBackendUserAdmin(admin.ModelAdmin):
     list_display = ('id', 'backend', 'username')
     search_fields = ('id', 'backend', 'username')
     list_filter = ('backend',)
+
+
+@admin.register(BannerMessage)
+class BannerMessageAdmin(admin.ModelAdmin):
+    list_display = ('id', 'message', 'created', 'read_by_count')
+    search_fields = ('id', 'message')
+    list_filter = ('created',)
+
+    def read_by_count(self, obj):
+        return obj.read_by.count()

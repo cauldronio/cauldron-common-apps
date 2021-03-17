@@ -51,3 +51,13 @@ class OauthUser(models.Model):
 
     class Meta:
         unique_together = ("username", "backend")
+
+
+class BannerMessage(models.Model):
+    """
+    Messages to show to authenticated users and keep a register
+    to know if they read/ignored it
+    """
+    message = models.TextField()
+    created = models.DateTimeField(auto_created=True)
+    read_by = models.ManyToManyField(to=settings.AUTH_USER_MODEL, blank=True)
