@@ -91,7 +91,8 @@ class Project(models.Model):
             'kde': n_kde,
             'meetup': n_meetup,
             'project_csv': project_csv,
-            'refresh_actions': refresh_actions
+            'refresh_actions': refresh_actions,
+            'owner': self.creator
         }
         return summary
 
