@@ -93,8 +93,7 @@ class Project(models.Model):
             'meetup': n_meetup,
             'stackexchange': n_stack_exchange,
             'project_csv': project_csv,
-            'refresh_actions': refresh_actions,
-            'owner': self.creator
+            'refresh_actions': refresh_actions
         }
         return summary
 

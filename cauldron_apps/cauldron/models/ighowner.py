@@ -1,3 +1,4 @@
+import datetime
 import logging
 
 from django.db import models, transaction
@@ -10,7 +11,7 @@ from cauldron_apps.poolsched_git.api import analyze_git_repo_obj
 from cauldron_apps.poolsched_github.api import analyze_gh_repo_obj
 
 try:
-    from github import Github
+    from github import Github, RateLimitExceededException
 except ImportError:
     # Github only used when running the intention
     pass
@@ -146,28 +147,34 @@ class IAddGHOwner(Intention):
 
     def _run_owner(self, token):
         github = Github(token)
-        repositories = github.get_user(self.owner).get_repos()
-        for repo_gh in repositories:
-            if repo_gh.fork and not self.forks:
-                continue
-            if self.issues:
-                logger.info(f"Adding GitHub {self.owner}/{repo_gh.name} to project {self.project.id}")
-                repo, created = GitHubRepository.objects.get_or_create(owner=self.owner, repo=repo_gh.name)
-                if not repo.repo_sched:
-                    repo.link_sched_repo()
-                repo.projects.add(self.project)
-                if self.analyze:
-                    logger.info(f"Create intention for {repo}")
-                    analyze_gh_repo_obj(self.project.creator, repo.repo_sched)
-            if self.commits:
-                logger.info(f"Adding Git {repo_gh.clone_url} to project {self.project.id}")
-                repo, created = GitRepository.objects.get_or_create(url=repo_gh.clone_url)
-                if not repo.repo_sched:
-                    repo.link_sched_repo()
-                repo.projects.add(self.project)
-                if self.analyze:
-                    logger.info(f"Create intention for {repo}")
-                    analyze_git_repo_obj(self.project.creator, repo.repo_sched)
+        try:
+            repositories = github.get_user(self.owner).get_repos()
+            for repo_gh in repositories:
+                if repo_gh.fork and not self.forks:
+                    continue
+                if self.issues:
+                    logger.info(f"Adding GitHub {self.owner}/{repo_gh.name} to project {self.project.id}")
+                    repo, created = GitHubRepository.objects.get_or_create(owner=self.owner, repo=repo_gh.name)
+                    if not repo.repo_sched:
+                        repo.link_sched_repo()
+                    repo.projects.add(self.project)
+                    if self.analyze:
+                        logger.info(f"Create intention for {repo}")
+                        analyze_gh_repo_obj(self.project.creator, repo.repo_sched)
+                if self.commits:
+                    logger.info(f"Adding Git {repo_gh.clone_url} to project {self.project.id}")
+                    repo, created = GitRepository.objects.get_or_create(url=repo_gh.clone_url)
+                    if not repo.repo_sched:
+                        repo.link_sched_repo()
+                    repo.projects.add(self.project)
+                    if self.analyze:
+                        logger.info(f"Create intention for {repo}")
+                        analyze_git_repo_obj(self.project.creator, repo.repo_sched)
+        except RateLimitExceededException:
+            utcnow = datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).timestamp()
+            time_to_reset = github.rate_limiting_resettime - (utcnow + 1)
+            time_to_reset = 0 if time_to_reset < 0 else time_to_reset
+            return time_to_reset
 
     def run(self, job):
         """Run the code to fulfill this intention
@@ -187,8 +194,13 @@ class IAddGHOwner(Intention):
         handler = self._create_log_handler(job)
         try:
             global_logger.addHandler(handler)
-            self._run_owner(token.token)
+            time_to_reset = self._run_owner(token.token)
             self.project.update_elastic_role()
+            if time_to_reset:
+                token.reset = now() + datetime.timedelta(minutes=time_to_reset)
+                token.save()
+                logger.error(f"Rate Limit reached. Retry at {token.reset}")
+                return False
             return True
         except Exception as e:
             logger.error(f"Error running IAddGHOwner intention {str(e)}")

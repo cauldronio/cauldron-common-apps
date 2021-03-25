@@ -17,7 +17,7 @@ class AddStackExchangeRepoAction(Action):
 
     @property
     def name_ui(self):
-        return f"Add group {self.repository.group}"
+        return f"Add <b>{self.repository.site}/{self.repository.tagged}</b>"
 
     @property
     def data_source_ui(self):
@@ -42,7 +42,7 @@ class RemoveStackExchangeRepoAction(Action):
 
     @property
     def name_ui(self):
-        return f"Remove group {self.repository.group}"
+        return f"Remove <b>{self.repository.site}/{self.repository.tagged}</b>"
 
     @property
     def data_source_ui(self):
