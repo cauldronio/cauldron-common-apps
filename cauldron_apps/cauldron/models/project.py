@@ -35,7 +35,7 @@ class Project(models.Model):
 
     @property
     def is_outdated(self):
-        limit = datetime.now(pytz.utc) - timedelta(days=5)
+        limit = datetime.now(pytz.utc) - timedelta(days=7)
         for repo in self.repository_set.select_subclasses():
             if not repo.last_refresh or repo.last_refresh < limit:
                 return True
@@ -43,14 +43,17 @@ class Project(models.Model):
 
     @property
     def last_refresh(self):
+        """
+        Return the oldest repository update.
+        If a repository has not been analyzed, return None
+        """
         last_refresh = None
         for repo in self.repository_set.select_subclasses():
             if not repo.last_refresh:
-                continue
-            if not last_refresh:
+                return None
+            elif not last_refresh:
                 last_refresh = repo.last_refresh
-                continue
-            if repo.last_refresh < last_refresh:
+            elif repo.last_refresh < last_refresh:
                 last_refresh = repo.last_refresh
         return last_refresh
 
