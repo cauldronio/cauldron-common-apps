@@ -9,7 +9,7 @@ with codecs.open(readme_md, encoding='utf-8') as f:
 
 setup(
     name="cauldron_apps",
-    version="0.1",
+    version="0.2",
     description="Django apps used in Cauldron.",
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -43,5 +43,6 @@ setup(
         "python-dateutil>=2.8.1,<3",
         "python-gitlab",
         "elasticsearch",
+        "tweepy",
     ]
 )
