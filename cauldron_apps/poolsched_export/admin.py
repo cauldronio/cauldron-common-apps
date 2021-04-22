@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
-from .models import IExportGitCSV, IExportGitCSVArchived, GitCSVFile
+from .models import IExportCSV, IExportCSVArchived, ProjectExportFile
 
 
 def user_name(obj):
@@ -47,25 +47,25 @@ class RunningInAWorker(admin.SimpleListFilter):
             return queryset
 
 
-@admin.register(IExportGitCSV)
+@admin.register(IExportCSV)
 class IntentionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'project', 'created', 'job', user_name, previous_count)
+    list_display = ('id', 'project', 'backend', 'created', 'job', user_name, previous_count)
     search_fields = ('id', 'project', 'user__first_name')
-    list_filter = ('created', RunningInAWorker)
+    list_filter = ('created', 'backend', RunningInAWorker)
     ordering = ('created', )
 
 
-@admin.register(IExportGitCSVArchived)
+@admin.register(IExportCSVArchived)
 class ArchivedIntentionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'project', 'created', 'completed', user_name, 'status', 'arch_job')
-    search_fields = ('id', 'project', 'user__first_name', 'status')
+    list_display = ('id', 'project', 'backend', 'created', 'completed', user_name, 'status', 'arch_job')
+    search_fields = ('id', 'project', 'backend', 'user__first_name', 'status')
     list_filter = ('status', 'created', 'completed')
     ordering = ('completed', )
 
 
-@admin.register(GitCSVFile)
+@admin.register(ProjectExportFile)
 class RepositoryAdmin(admin.ModelAdmin):
-    list_display = ('id', 'project', 'created', 'location')
-    search_fields = ('id', 'project', 'created', 'location')
+    list_display = ('id', 'project', 'backend', 'created', 'location')
+    search_fields = ('id', 'project', 'backend', 'created', 'location')
     list_filter = ('created',)
     ordering = ('id', )

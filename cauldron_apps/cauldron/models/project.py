@@ -7,7 +7,9 @@ from django.db import models
 from django.conf import settings
 from django.db.models import Q
 
+from cauldron_apps.poolsched_export.models import ProjectExportFile
 from .repository import GitHubRepository, GitLabRepository, MeetupRepository, GitRepository, StackExchangeRepository
+from .backends import Backends
 from ..opendistro import OpendistroApi, BACKEND_INDICES
 
 ELASTIC_URL = 'https://admin:{}@{}:{}'.format(settings.ES_ADMIN_PASSWORD,
@@ -57,6 +59,28 @@ class Project(models.Model):
                 last_refresh = repo.last_refresh
         return last_refresh
 
+    def export_summary(self):
+        data = {}
+        for backend_id, backend_name in Backends.choices:
+            name = str(backend_name).upper()
+            if backend_id == Backends.UNKNOWN:
+                continue
+            try:
+                file = self.file_exported.filter(backend=backend_id).latest('created')
+            except ProjectExportFile.DoesNotExist:
+                file = None
+            running = self.iexport_csv.filter(backend=backend_id).exists()
+            if file:
+                data[name] = {
+                    'created': file.created,
+                    'link': os.path.join(PATH_STATIC_FILES, file.location),
+                    'size': file.size,
+                    'running': running
+                }
+            elif running:
+                data[name] = {'running': running}
+        return data
+
     def summary(self):
         """Get a summary about the repositories in the project"""
         total = self.repository_set.count()
@@ -68,18 +92,6 @@ class Project(models.Model):
         n_meetup = MeetupRepository.objects.filter(projects=self).count()
         n_stack_exchange = StackExchangeRepository.objects.filter(projects=self).count()
         running = self.repos_running()
-
-        project_csv = {
-            'generating': False,
-            'download': False
-        }
-        try:
-            git_csv = self.git_csv_file.latest('created')
-            project_csv['download'] = {'date': git_csv.created,
-                                       'link': os.path.join(PATH_STATIC_FILES, git_csv.location)}
-        except models.ObjectDoesNotExist:
-            pass
-        project_csv['generating'] = self.iexport_git_csv.exists()
 
         IRefreshActions = apps.get_model('cauldron_actions.IRefreshActions')
         refresh_actions = IRefreshActions.objects.filter(project=self).exists()
@@ -95,7 +107,6 @@ class Project(models.Model):
             'kde': n_kde,
             'meetup': n_meetup,
             'stackexchange': n_stack_exchange,
-            'project_csv': project_csv,
             'refresh_actions': refresh_actions
         }
         return summary

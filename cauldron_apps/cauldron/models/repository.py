@@ -1,6 +1,7 @@
 from django.db import models
 from django.apps import apps
 
+from .backends import Backends
 from cauldron_apps.poolsched_git import models as git_models
 from cauldron_apps.poolsched_git import api as git_api
 from cauldron_apps.poolsched_github import models as github_models
@@ -18,23 +19,6 @@ from model_utils.managers import InheritanceManager
 
 
 class Repository(models.Model):
-    GIT = 'GI'
-    GITHUB = 'GH'
-    GITLAB = 'GL'
-    GNOME = 'GN'
-    KDE = 'KD'
-    MEETUP = 'MU'
-    STACK_EXCHANGE = 'SE'
-    UNKNOWN = 'UK'
-    BACKEND_CHOICES = [
-        (GIT, 'Git'),
-        (GITHUB, 'GitHub'),
-        (GITLAB, 'GitLab'),
-        (GNOME, 'Gnome'),
-        (KDE, 'KDE'),
-        (MEETUP, 'Meetup'),
-        (STACK_EXCHANGE, 'StackExchange'),
-    ]
     # Globals for the state of a repository
     IN_PROGRESS = 'In progress'
     ANALYZED = 'Analyzed'
@@ -46,8 +30,8 @@ class Repository(models.Model):
     projects = models.ManyToManyField('cauldron.project')
     backend = models.CharField(
         max_length=2,
-        choices=BACKEND_CHOICES,
-        default=UNKNOWN,
+        choices=Backends.choices,
+        default=Backends.UNKNOWN,
     )
 
     class Meta:
@@ -99,7 +83,7 @@ class GitRepository(Repository):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.backend = Repository.GIT
+        self.backend = Backends.GIT
 
     def __str__(self):
         return f"{self.pk} - ...{self.url[-20:]}"
@@ -190,7 +174,7 @@ class GitHubRepository(Repository):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.backend = Repository.GITHUB
+        self.backend = Backends.GITHUB
 
     def __str__(self):
         return f"{self.pk} - {self.owner}/{self.repo}"
@@ -287,11 +271,11 @@ class GitLabRepository(Repository):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance.name == 'Gnome':
-            self.backend = Repository.GNOME
+            self.backend = Backends.GNOME
         elif self.instance.name == 'KDE':
-            self.backend = Repository.KDE
+            self.backend = Backends.KDE
         else:
-            self.backend = Repository.GITLAB
+            self.backend = Backends.GITLAB
 
     def __str__(self):
         return f"{self.pk} - {self.owner}/{self.repo}"
@@ -381,7 +365,7 @@ class MeetupRepository(Repository):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.backend = Repository.MEETUP
+        self.backend = Backends.MEETUP
 
     def __str__(self):
         return f"{self.pk} - {self.group}"
@@ -472,7 +456,7 @@ class StackExchangeRepository(Repository):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.backend = Repository.STACK_EXCHANGE
+        self.backend = Backends.STACK_EXCHANGE
 
     def __str__(self):
         return f"{self.pk} - {self.site}/{self.tagged}"
