@@ -61,3 +61,6 @@ class BannerMessage(models.Model):
     message = models.TextField()
     created = models.DateTimeField(auto_created=True)
     read_by = models.ManyToManyField(to=settings.AUTH_USER_MODEL, blank=True)
+    color = models.TextField(default="alert-info")
+    border_color = models.TextField(default="border-left-primary")
+    text_color = models.TextField(default="text-dark")
