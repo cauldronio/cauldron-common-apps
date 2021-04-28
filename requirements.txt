@@ -1,4 +1,4 @@
-Django>=3.1,<3.2
+Django>=3.1,<3.3
 mysqlclient
 sqlalchemy
 django-model-utils>=4.0
