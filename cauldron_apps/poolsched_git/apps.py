@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class PoolschedGitConfig(AppConfig):
-    name = 'poolsched_git'
+    name = 'cauldron_apps.poolsched_git'

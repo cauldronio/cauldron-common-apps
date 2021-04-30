@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class PoolschedTwitterConfig(AppConfig):
-    name = 'poolsched_twitter'
+    name = 'cauldron_apps.poolsched_twitter'

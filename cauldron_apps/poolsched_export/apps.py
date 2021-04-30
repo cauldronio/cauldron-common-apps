@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class PoolschedExportConfig(AppConfig):
-    name = 'poolsched_export'
+    name = 'cauldron_apps.poolsched_export'

@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class CauldronActionsConfig(AppConfig):
-    name = 'cauldron_actions'
+    name = 'cauldron_apps.cauldron_actions'

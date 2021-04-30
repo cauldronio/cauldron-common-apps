@@ -2,4 +2,4 @@ from django.apps import AppConfig
 
 
 class PoolschedShRefreshConfig(AppConfig):
-    name = 'poolsched_sh_refresh'
+    name = 'cauldron_apps.poolsched_autorefresh'
