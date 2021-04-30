@@ -26,7 +26,7 @@ SECRET_KEY = '!6_w+t5mzefpl2f0+kb#o3p5e^kn81oko@uzy+(q4crqi@z_e6'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-DEFAULT_AUTO_FIELD='django.db.models.AutoField'
+DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 GIT_REPOS = os.environ.get('GIT_REPOS')
 JOB_LOGS = os.environ.get('JOB_LOGS')

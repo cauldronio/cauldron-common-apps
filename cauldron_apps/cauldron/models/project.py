@@ -26,6 +26,11 @@ class Project(models.Model):
                                 on_delete=models.SET_NULL,
                                 blank=True,
                                 null=True)
+    fork_from = models.ForeignKey('self',
+                                  on_delete=models.SET_NULL,
+                                  blank=True,
+                                  null=True,
+                                  default=None)
 
     class Meta:
         constraints = [
@@ -136,6 +141,18 @@ class Project(models.Model):
             .count()
         return git_running + gh_running + gl_running + meetup_running + stack_running
 
+    def create_es_role(self):
+        if hasattr(self, 'projectrole'):
+            return
+        role = f"role_project_{self.id}"
+        backend_role = f"br_project_{self.id}"
+
+        od_api = OpendistroApi(ELASTIC_URL, settings.ES_ADMIN_PASSWORD)
+        od_api.create_role(role)
+        od_api.create_mapping(role, backend_roles=[backend_role])
+
+        ProjectRole.objects.create(role=role, backend_role=backend_role, project=self)
+
     def update_elastic_role(self):
         odfe_api = OpendistroApi(ELASTIC_URL, settings.ES_ADMIN_PASSWORD)
         permissions = []
@@ -160,6 +177,28 @@ class Project(models.Model):
             index_permissions = OpendistroApi.create_index_permissions(url_list, index)
             permissions.append(index_permissions)
         odfe_api.update_elastic_role(self.projectrole.role, permissions)
+
+    def fork(self, creator):
+        name, num = self.name, 2
+        while creator.project_set.filter(name=name).exists():
+            name = f'{self.name[:25]} ({num})'
+            num += 1
+
+        report = self.__class__.objects.create(
+            name=name,
+            creator=creator,
+            fork_from=self)
+        report.create_es_role()
+        report.repository_set.set(self.repository_set.all())
+        report.update_elastic_role()
+        for action in self.action_set.order_by('created').select_subclasses():
+            action.id = None
+            action.pk = None
+            action._state.adding = True
+            action.creator = creator
+            action.project = report
+            action.save()
+        return report
 
 
 class ProjectRole(models.Model):
