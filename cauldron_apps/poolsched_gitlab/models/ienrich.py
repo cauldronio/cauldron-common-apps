@@ -108,6 +108,7 @@ class IGLEnrich(Intention):
             global_logger.addHandler(handler)
             runner = GitLabEnrich(url=self.repo.url, endpoint=self.repo.instance.endpoint)
             output = runner.run()
+            self.repo.gitlabrepository.update_last_refresh()
         except Exception as e:
             logger.error(f"Error: {e}")
             raise Job.StopException

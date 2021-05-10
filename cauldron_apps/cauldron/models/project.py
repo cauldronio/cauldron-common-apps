@@ -54,15 +54,8 @@ class Project(models.Model):
         Return the oldest repository update.
         If a repository has not been analyzed, return None
         """
-        last_refresh = None
-        for repo in self.repository_set.select_subclasses():
-            if not repo.last_refresh:
-                return None
-            elif not last_refresh:
-                last_refresh = repo.last_refresh
-            elif repo.last_refresh < last_refresh:
-                last_refresh = repo.last_refresh
-        return last_refresh
+        repo = self.repository_set.earliest('last_refresh')
+        return repo.last_refresh
 
     def export_summary(self):
         data = {}

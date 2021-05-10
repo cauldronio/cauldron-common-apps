@@ -108,6 +108,7 @@ class IStackExchangeEnrich(Intention):
             global_logger.addHandler(handler)
             runner = StackExchangeEnrich(url=self.question_tag.url)
             output = runner.run()
+            self.question_tag.stackexchangerepository.update_last_refresh()
         except Exception as e:
             logger.error(f"Error running IStackExchangeEnrich: {str(e)}")
             raise Job.StopException

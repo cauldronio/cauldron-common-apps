@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.timezone import now
 from django.apps import apps
 
 from .backends import Backends
@@ -33,6 +34,7 @@ class Repository(models.Model):
         choices=Backends.choices,
         default=Backends.UNKNOWN,
     )
+    last_refresh = models.DateTimeField(default=None, null=True)
 
     class Meta:
         verbose_name_plural = "Repositories"
@@ -43,11 +45,6 @@ class Repository(models.Model):
     @property
     def status(self):
         """Return running, pending or unknown depending on the status"""
-        raise NotImplementedError
-
-    @property
-    def last_refresh(self):
-        """Return the last refresh of the repository, Raw + Enrich"""
         raise NotImplementedError
 
     @property
@@ -71,6 +68,10 @@ class Repository(models.Model):
     def create_remove_action(self, project):
         """Create action of removing a repository from a project"""
         raise NotImplementedError
+
+    def update_last_refresh(self):
+        self.last_refresh = now()
+        self.save()
 
 
 class GitRepository(Repository):
@@ -133,14 +134,6 @@ class GitRepository(Repository):
             return self.ANALYZED
         else:
             return self.ERROR
-
-    @property
-    def last_refresh(self):
-        try:
-            date = git_models.IGitEnrichArchived.objects.filter(repo=self.repo_sched).latest('completed').completed
-        except git_models.IGitEnrichArchived.DoesNotExist:
-            date = None
-        return date
 
     def get_intentions(self):
         """Return a list of intentions related with this object"""
@@ -226,14 +219,6 @@ class GitHubRepository(Repository):
             return self.ANALYZED
         else:
             return self.ERROR
-
-    @property
-    def last_refresh(self):
-        try:
-            date = github_models.IGHEnrichArchived.objects.filter(repo=self.repo_sched).latest('completed').completed
-        except github_models.IGHEnrichArchived.DoesNotExist:
-            date = None
-        return date
 
     def get_intentions(self):
         """Return a list of intentions related with this object"""
@@ -340,14 +325,6 @@ class GitLabRepository(Repository):
         self.repo_sched.iglraw_set.filter(user=user, job=None).delete()
         self.repo_sched.iglenrich_set.filter(user=user, job=None).delete()
 
-    @property
-    def last_refresh(self):
-        try:
-            date = gitlab_models.IGLEnrichArchived.objects.filter(repo=self.repo_sched).latest('completed').completed
-        except gitlab_models.IGLEnrichArchived.DoesNotExist:
-            date = None
-        return date
-
     def create_remove_action(self, project):
         """Create action of removing a repository from a project"""
         RemoveGitLabRepoAction = apps.get_model('cauldron_actions.RemoveGitLabRepoAction')
@@ -415,14 +392,6 @@ class MeetupRepository(Repository):
             return self.ANALYZED
         else:
             return self.ERROR
-
-    @property
-    def last_refresh(self):
-        try:
-            date = meetup_models.IMeetupEnrichArchived.objects.filter(repo=self.repo_sched).latest('completed').completed
-        except meetup_models.IMeetupEnrichArchived.DoesNotExist:
-            date = None
-        return date
 
     def get_intentions(self):
         """Return a list of intentions related with this object"""
@@ -508,14 +477,6 @@ class StackExchangeRepository(Repository):
             return self.ANALYZED
         else:
             return self.ERROR
-
-    @property
-    def last_refresh(self):
-        try:
-            date = stack_models.IStackExchangeEnrichArchived.objects.filter(question_tag=self.repo_sched).latest('completed').completed
-        except stack_models.IStackExchangeEnrichArchived.DoesNotExist:
-            date = None
-        return date
 
     def get_intentions(self):
         """Return a list of intentions related with this object"""

@@ -108,6 +108,7 @@ class IGitEnrich(Intention):
             global_logger.addHandler(handler)
             runner = GitEnrich(self.repo.url)
             output = runner.run()
+            self.repo.gitrepository.update_last_refresh()
             if output:
                 raise Job.StopException
         except Exception as e:

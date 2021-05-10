@@ -110,6 +110,7 @@ class IGHEnrich(Intention):
             global_logger.addHandler(handler)
             runner = GitHubEnrich(url=self.repo.url)
             output = runner.run()
+            self.repo.githubrepository.update_last_refresh()
         except Exception as e:
             logger.error(f"Error: {e}")
             raise Job.StopException

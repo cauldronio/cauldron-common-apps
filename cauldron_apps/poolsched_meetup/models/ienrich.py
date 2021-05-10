@@ -109,6 +109,7 @@ class IMeetupEnrich(Intention):
             global_logger.addHandler(handler)
             runner = MeetupEnrich(url=self.repo.repo)
             output = runner.run()
+            self.repo.meetuprepository.update_last_refresh()
         except Exception as e:
             logger.error(f"Error: {e}")
             raise Job.StopException
