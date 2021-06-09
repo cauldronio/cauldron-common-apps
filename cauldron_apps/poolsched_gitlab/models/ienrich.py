@@ -1,6 +1,12 @@
 import logging
+import ssl
 
+from django.conf import settings
 from django.db import models, transaction
+from elasticsearch import Elasticsearch, ElasticsearchException
+from elasticsearch.connection import create_ssl_context
+from elasticsearch_dsl import Search, Q
+
 from poolsched.models import Intention, ArchivedIntention, Job
 from .base import GLRepo
 from .iraw import IGLRaw
@@ -97,6 +103,35 @@ class IGLEnrich(Intention):
             return None
         return self.job
 
+    def update_db_metrics(self):
+        context = create_ssl_context()
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        elastic = Elasticsearch(hosts=[settings.ES_IN_HOST], scheme='https', port=settings.ES_IN_PORT,
+                                http_auth=("admin", settings.ES_ADMIN_PASSWORD),
+                                ssl_context=context, timeout=5)
+        try:
+            s = Search(using=elastic, index='gitlab_issues') \
+                .filter(Q('term', origin=self.repo.gitlabrepository.datasource_url))
+            value = s.count()
+            metrics = self.repo.gitlabrepository.metrics
+            if metrics:
+                metrics.issues = value
+                metrics.save()
+        except ElasticsearchException as e:
+            logger.warning(e)
+
+        try:
+            s = Search(using=elastic, index='gitlab_mrs') \
+                .filter(Q('term', origin=self.repo.gitlabrepository.datasource_url))
+            value = s.count()
+            metrics = self.repo.gitlabrepository.metrics
+            if metrics:
+                metrics.reviews = value
+                metrics.save()
+        except ElasticsearchException as e:
+            logger.warning(e)
+
     def run(self, job):
         """Run the code to fulfill this intention
 
@@ -108,6 +143,7 @@ class IGLEnrich(Intention):
             global_logger.addHandler(handler)
             runner = GitLabEnrich(url=self.repo.url, endpoint=self.repo.instance.endpoint)
             output = runner.run()
+            self.update_db_metrics()
             self.repo.gitlabrepository.update_last_refresh()
         except Exception as e:
             logger.error(f"Error: {e}")

@@ -3,7 +3,7 @@ import logging
 from django.db import models, transaction
 from django.utils.timezone import now
 
-from cauldron_apps.cauldron.models import Project, GitRepository, GitLabRepository
+from cauldron_apps.cauldron.models import Project, GitRepository, GitLabRepository, RepositoryMetrics
 from cauldron_apps.poolsched_git.api import analyze_git_repo_obj
 from cauldron_apps.poolsched_gitlab.api import analyze_gl_repo_obj
 from cauldron_apps.poolsched_gitlab.models.base import GLToken, GLInstance
@@ -201,21 +201,26 @@ class IAddGLOwner(Intention):
         else:
             raise Job.StopException
 
-        if self.issues:
-            for url in gl_urls:
-                owner, name = url.split('/')
+        for owner_name, git_url in zip(gl_urls, git_urls):
+            owner, name = owner_name.split('/')
+            metrics_name = f'{self.instance.name} {self.owner}/{name}'
+            result, _ = RepositoryMetrics.objects.get_or_create(name=metrics_name)
+            if self.issues:
                 logger.info(f"Adding GitLab {owner}/{name} to project {self.project.id}")
-                repo, created = GitLabRepository.objects.get_or_create(owner=owner, repo=name, instance=self.instance)
+                repo, created = GitLabRepository.objects.get_or_create(owner=owner,
+                                                                       repo=name,
+                                                                       instance=self.instance,
+                                                                       defaults={'metrics': result})
                 if not repo.repo_sched:
                     repo.link_sched_repo()
                 repo.projects.add(self.project)
                 if self.analyze:
                     logger.info(f"Create intention for {repo}")
                     analyze_gl_repo_obj(self.project.creator, repo.repo_sched)
-        if self.commits:
-            for url in git_urls:
-                logger.info(f"Adding Git {url} to project {self.project.id}")
-                repo, created = GitRepository.objects.get_or_create(url=url)
+            if self.commits:
+                logger.info(f"Adding Git {git_url} to project {self.project.id}")
+                repo, created = GitRepository.objects.get_or_create(url=git_url,
+                                                                    defaults={'metrics': result})
                 if not repo.repo_sched:
                     repo.link_sched_repo()
                 repo.projects.add(self.project)

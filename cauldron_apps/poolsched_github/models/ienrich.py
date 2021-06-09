@@ -1,8 +1,14 @@
 import logging
+import ssl
 
 from django.db import models, transaction
+from django.conf import settings
+from elasticsearch_dsl import Search, Q
 
 from poolsched.models import Intention, ArchivedIntention, Job
+
+from elasticsearch import Elasticsearch, ElasticsearchException
+from elasticsearch.connection import create_ssl_context
 
 from ..mordred import GitHubEnrich
 from .base import GHRepo
@@ -98,6 +104,37 @@ class IGHEnrich(Intention):
             return None
         return self.job
 
+    def update_db_metrics(self):
+        context = create_ssl_context()
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        elastic = Elasticsearch(hosts=[settings.ES_IN_HOST], scheme='https', port=settings.ES_IN_PORT,
+                                http_auth=("admin", settings.ES_ADMIN_PASSWORD),
+                                ssl_context=context, timeout=5)
+        try:
+            s = Search(using=elastic, index='github') \
+                .filter(Q('match', pull_request=False)) \
+                .filter(Q('term', origin=self.repo.githubrepository.datasource_url))
+            value = s.count()
+            metrics = self.repo.githubrepository.metrics
+            if metrics:
+                metrics.issues = value
+                metrics.save()
+        except ElasticsearchException as e:
+            logger.warning(e)
+
+        try:
+            s = Search(using=elastic, index='github') \
+                .filter(Q('match', pull_request=True)) \
+                .filter(Q('term', origin=self.repo.githubrepository.datasource_url))
+            value = s.count()
+            metrics = self.repo.githubrepository.metrics
+            if metrics:
+                metrics.reviews = value
+                metrics.save()
+        except ElasticsearchException as e:
+            logger.warning(e)
+
     def run(self, job):
         """Run the code to fulfill this intention
         Returns true if completed
@@ -110,6 +147,7 @@ class IGHEnrich(Intention):
             global_logger.addHandler(handler)
             runner = GitHubEnrich(url=self.repo.url)
             output = runner.run()
+            self.update_db_metrics()
             self.repo.githubrepository.update_last_refresh()
         except Exception as e:
             logger.error(f"Error: {e}")

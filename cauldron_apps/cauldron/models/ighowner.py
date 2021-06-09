@@ -5,7 +5,7 @@ from django.db import models, transaction
 from django.utils.timezone import now
 
 from poolsched.models import Intention, Job, ArchivedIntention
-from cauldron_apps.cauldron.models import Project, GitHubRepository, GitRepository
+from cauldron_apps.cauldron.models import Project, GitHubRepository, GitRepository, RepositoryMetrics
 from cauldron_apps.poolsched_github.models import GHToken, GHInstance
 from cauldron_apps.poolsched_git.api import analyze_git_repo_obj
 from cauldron_apps.poolsched_github.api import analyze_gh_repo_obj
@@ -150,11 +150,15 @@ class IAddGHOwner(Intention):
         try:
             repositories = github.get_user(self.owner).get_repos()
             for repo_gh in repositories:
+                name = f'GitHub {self.owner}/{repo_gh.name}'
+                result, _ = RepositoryMetrics.objects.get_or_create(name=name)
                 if repo_gh.fork and not self.forks:
                     continue
                 if self.issues:
                     logger.info(f"Adding GitHub {self.owner}/{repo_gh.name} to project {self.project.id}")
-                    repo, created = GitHubRepository.objects.get_or_create(owner=self.owner, repo=repo_gh.name)
+                    repo, created = GitHubRepository.objects.get_or_create(owner=self.owner,
+                                                                           repo=repo_gh.name,
+                                                                           defaults={'metrics': result})
                     if not repo.repo_sched:
                         repo.link_sched_repo()
                     repo.projects.add(self.project)
@@ -163,7 +167,8 @@ class IAddGHOwner(Intention):
                         analyze_gh_repo_obj(self.project.creator, repo.repo_sched)
                 if self.commits:
                     logger.info(f"Adding Git {repo_gh.clone_url} to project {self.project.id}")
-                    repo, created = GitRepository.objects.get_or_create(url=repo_gh.clone_url)
+                    repo, created = GitRepository.objects.get_or_create(url=repo_gh.clone_url,
+                                                                        defaults={'metrics': result})
                     if not repo.repo_sched:
                         repo.link_sched_repo()
                     repo.projects.add(self.project)

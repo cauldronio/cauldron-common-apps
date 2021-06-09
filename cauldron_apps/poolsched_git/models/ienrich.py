@@ -1,6 +1,11 @@
 import logging
+import ssl
 
+from django.conf import settings
 from django.db import models, transaction
+from elasticsearch import Elasticsearch, ElasticsearchException
+from elasticsearch.connection import create_ssl_context
+from elasticsearch_dsl import Search, Q
 
 from poolsched.models import Job, Intention, ArchivedIntention
 from .base import GitRepo
@@ -97,6 +102,37 @@ class IGitEnrich(Intention):
             return None
         return self.job
 
+    def update_db_metrics(self):
+        logger.info("Update total commits in database")
+        context = create_ssl_context()
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        elastic = Elasticsearch(hosts=[settings.ES_IN_HOST], scheme='https', port=settings.ES_IN_PORT,
+                                http_auth=("admin", settings.ES_ADMIN_PASSWORD),
+                                ssl_context=context, timeout=5)
+        s = Search(using=elastic, index='git') \
+            .filter(~Q('match', files=0)) \
+            .filter(Q('term', origin=self.repo.gitrepository.datasource_url)) \
+            .extra(size=0)
+        s.aggs.bucket('commits', 'cardinality', field='hash')
+
+        try:
+            response = s.execute()
+        except ElasticsearchException as e:
+            logger.warning(e)
+            response = None
+
+        if response is not None and response.success():
+            value = response.aggregations.commits.value or 0
+        else:
+            value = 0
+
+        metrics = self.repo.gitrepository.metrics
+        if metrics:
+            logger.info(f"There are {value} commits")
+            metrics.commits = value
+            metrics.save()
+
     def run(self, job):
         """Run the code to fulfill this intention
         Returns true if completed
@@ -108,6 +144,7 @@ class IGitEnrich(Intention):
             global_logger.addHandler(handler)
             runner = GitEnrich(self.repo.url)
             output = runner.run()
+            self.update_db_metrics()
             self.repo.gitrepository.update_last_refresh()
             if output:
                 raise Job.StopException

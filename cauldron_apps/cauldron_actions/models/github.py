@@ -2,7 +2,7 @@ import logging
 from django.db import models
 from github import Github
 
-from cauldron_apps.cauldron.models import GitRepository, GitHubRepository
+from cauldron_apps.cauldron.models import GitRepository, GitHubRepository, RepositoryMetrics
 from .action import Action
 
 logger = logging.getLogger(__name__)
@@ -40,17 +40,22 @@ class AddGitHubOwnerAction(Action):
         github = Github(token.token)
         repositories = github.get_user(self.owner).get_repos()
         for repo_gh in repositories:
+            name = f'GitHub {self.owner}/{repo_gh.name}'
+            result, _ = RepositoryMetrics.objects.get_or_create(name=name)
             if repo_gh.fork and not self.forks:
                 continue
             if self.issues:
                 logger.info(f"Adding GitHub {self.owner}/{repo_gh.name} to project {self.project.id}")
-                repo, created = GitHubRepository.objects.get_or_create(owner=self.owner, repo=repo_gh.name)
+                repo, created = GitHubRepository.objects.get_or_create(owner=self.owner,
+                                                                       repo=repo_gh.name,
+                                                                       defaults={'metrics': result})
                 if not repo.repo_sched:
                     repo.link_sched_repo()
                 repo.projects.add(self.project)
             if self.commits:
                 logger.info(f"Adding Git {repo_gh.clone_url} to project {self.project.id}")
-                repo, created = GitRepository.objects.get_or_create(url=repo_gh.clone_url)
+                repo, created = GitRepository.objects.get_or_create(url=repo_gh.clone_url,
+                                                                    defaults={'metrics': result})
                 if not repo.repo_sched:
                     repo.link_sched_repo()
                 repo.projects.add(self.project)

@@ -9,7 +9,7 @@ from cauldron_apps.poolsched_gitlab.models import GLInstance
 from .models import IAddGHOwner, IAddGLOwner, IAddGHOwnerArchived, IAddGLOwnerArchived, \
     Project, Repository, GitRepository, GitHubRepository, GitLabRepository, MeetupRepository, \
     StackExchangeRepository, UserWorkspace, ProjectRole, AnonymousUser, OauthUser, AuthorizedBackendUser, \
-    BannerMessage
+    BannerMessage, RepositoryMetrics
 
 
 User = get_user_model()
@@ -325,3 +325,10 @@ class BannerMessageAdmin(admin.ModelAdmin):
 
     def read_by_count(self, obj):
         return obj.read_by.count()
+
+
+@admin.register(RepositoryMetrics)
+class RRepositoryMetricsAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'last_update', 'commits', 'issues', 'reviews')
+    search_fields = ('id', 'name')
+    list_filter = ('last_update',)

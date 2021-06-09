@@ -43,6 +43,7 @@ setup(
         "python-dateutil>=2.8.1,<3",
         "python-gitlab",
         "elasticsearch",
+        "elasticsearch_dsl",
         "tweepy",
     ]
 )

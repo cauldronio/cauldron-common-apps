@@ -1,3 +1,4 @@
+import ssl
 from django.db import models
 from django.utils.timezone import now
 from django.apps import apps
@@ -29,6 +30,7 @@ class Repository(models.Model):
     objects = InheritanceManager()
 
     projects = models.ManyToManyField('cauldron.project')
+    metrics = models.ForeignKey('cauldron.RepositoryMetrics', on_delete=models.SET_NULL, null=True, default=None)
     backend = models.CharField(
         max_length=2,
         choices=Backends.choices,
