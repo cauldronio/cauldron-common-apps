@@ -18,15 +18,15 @@ def remove_file(filename):
 
 
 class ExportGitLabIssues(ExportOpenDistroBackend):
-    BASE_FIELDS = ['repository', 'id', 'id_in_repo', 'state', 'created_at', 'closed_at', 'solved_at',
+    BASE_FIELDS = ['repository', 'id', 'id_in_repo', 'state', 'created_at', 'closed_at',
                    'time_to_first_attention', 'author_username', 'assignee_username', 'milestone']
     SORTINGHAT_FIELDS = ['author_name', 'author_org_name', 'assignee_name']
     ES_INDEX = 'gitlab_issues'
 
 
 class ExportGitLabMergeRequests(ExportOpenDistroBackend):
-    BASE_FIELDS = ['repository', 'id', 'id_in_repo', 'state', 'created_at', 'closed_at', 'time_to_first_attention',
-                   'author_username', 'merge_author_login', 'milestone']
+    BASE_FIELDS = ['repository', 'id', 'id_in_repo', 'state', 'created_at', 'closed_at', 'solved_at',
+                   'time_to_first_attention', 'author_username', 'merge_author_login', 'milestone']
     SORTINGHAT_FIELDS = ['author_name', 'author_org_name', 'merge_author_name']
     ES_INDEX = 'gitlab_mrs'
 
