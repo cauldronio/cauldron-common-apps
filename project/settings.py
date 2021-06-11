@@ -35,6 +35,10 @@ ES_IN_HOST = os.environ.get('ELASTIC_HOST')
 ES_IN_PORT = os.environ.get('ELASTIC_PORT')
 ES_ADMIN_PASSWORD = os.environ.get('ELASTIC_PASS')
 
+KIB_IN_HOST = os.environ.get('KIBANA_HOST')
+KIB_IN_PORT = os.environ.get('KIBANA_PORT')
+KIB_PATH = os.environ.get('KIBANA_PATH')
+
 SORTINGHAT = os.environ.get('SORTINGHAT', False) in (True, 'True', 'true')
 SORTINGHAT_HOST = os.environ.get('SORTINGHAT_HOST')
 SORTINGHAT_DATABASE = os.environ.get('SORTINGHAT_DATABASE')

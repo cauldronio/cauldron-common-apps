@@ -58,7 +58,10 @@ class Project(models.Model):
         return repo.last_refresh
 
     def export_summary(self):
-        data = {}
+        data = {
+            'csv': {},
+            'kbn_reports': {}
+        }
         for backend_id, backend_name in Backends.choices:
             name = str(backend_name).upper()
             if backend_id == Backends.UNKNOWN:
@@ -69,14 +72,16 @@ class Project(models.Model):
                 file = None
             running = self.iexport_csv.filter(backend=backend_id).exists()
             if file:
-                data[name] = {
+                data['csv'][name] = {
                     'created': file.created,
                     'link': os.path.join(PATH_STATIC_FILES, file.location),
                     'size': file.size,
                     'running': running
                 }
             elif running:
-                data[name] = {'running': running}
+                data['csv'][name] = {'running': running}
+        for kbn_report in self.kbn_report.order_by('-created')[:8].values('id', 'location', 'progress'):
+            data['kbn_reports'][str(kbn_report['id'])] = kbn_report
         return data
 
     def summary(self):

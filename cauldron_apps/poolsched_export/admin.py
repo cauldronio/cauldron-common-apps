@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
-from .models import IExportCSV, IExportCSVArchived, ProjectExportFile
+from .models import IExportCSV, IExportCSVArchived, ProjectExportFile, \
+                    IReportKbn, IReportKbnArchived, ProjectKibanaReport
 
 
 def user_name(obj):
@@ -69,3 +70,27 @@ class RepositoryAdmin(admin.ModelAdmin):
     search_fields = ('id', 'project', 'backend', 'created', 'location')
     list_filter = ('created',)
     ordering = ('id', )
+
+
+@admin.register(IReportKbn)
+class IntentionKbnAdmin(admin.ModelAdmin):
+    list_display = ('id', 'kbn_report', 'created', 'job', user_name, previous_count)
+    search_fields = ('id', 'kbn_report', 'user__first_name')
+    list_filter = ('created', RunningInAWorker)
+    ordering = ('created', )
+
+
+@admin.register(IReportKbnArchived)
+class ArchivedIntentionKbnAdmin(admin.ModelAdmin):
+    list_display = ('id', 'kbn_report', 'created', 'completed', user_name, 'status', 'arch_job')
+    search_fields = ('id', 'kbn_report', 'user__first_name', 'status')
+    list_filter = ('status', 'created', 'completed')
+    ordering = ('completed', )
+
+
+@admin.register(ProjectKibanaReport)
+class KibanaReportAdmin(admin.ModelAdmin):
+    list_display = ('id', 'project', 'from_date', 'to_date', 'location')
+    search_fields = ('id', 'project', 'from_date', 'to_date', 'location')
+    ordering = ('id', )
+

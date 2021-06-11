@@ -14,3 +14,24 @@ def get_jwt_key(user, backend_roles):
         "roles": backend_roles
     }
     return jwt.encode(claims, settings.JWT_KEY, algorithm='RS256').decode('utf-8')
+
+
+def get_available_dashboards(project, kbn_url):
+    output = []
+    token = get_jwt_key('Dashboards', project.projectrole.backend_role)
+    import requests
+    with requests.Session() as client:
+        client.get(f"{kbn_url}/", params={'jwtToken': token})
+        res = client.get(f"{kbn_url}/api/saved_objects/_find", params={'default_search_operator': 'AND',
+                                                                       'page': 1,
+                                                                       'per_page': 1000,
+                                                                       'type': 'dashboard'})
+        if res.ok:
+            data = res.json()
+            for dashboard in data['saved_objects']:
+                output.append({
+                    'name': dashboard['attributes']['title'],
+                    'id': dashboard['id']
+                })
+
+    return output
