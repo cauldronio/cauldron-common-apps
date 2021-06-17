@@ -22,6 +22,7 @@ PATH_STATIC_FILES = '/download/'
 class Project(models.Model):
     name = models.CharField(max_length=32, blank=False, default=None)
     created = models.DateTimeField(auto_now_add=True)
+    public = models.BooleanField(default=True)
     creator = models.ForeignKey(settings.AUTH_USER_MODEL,
                                 on_delete=models.SET_NULL,
                                 blank=True,

@@ -113,13 +113,13 @@ admin.site.register(User, UserAdmin)
 
 @admin.register(Project)
 class ProjectAdmin(admin.ModelAdmin):
-    list_filter = ('created', ProjectDataSources)
+    list_filter = ('created', 'public', ProjectDataSources)
     search_fields = ('id', 'name', 'creator__first_name')
     ordering = ('id',)
     actions = ['export_as_csv']
 
     def get_list_display(self, request):
-        display = ['id', 'name', 'created', 'creator_name', 'git_repos', 'github_repos', 'meetup_repos', 'stack_repos']
+        display = ['id', 'name', 'public', 'created', 'creator_name', 'git_repos', 'github_repos', 'meetup_repos', 'stack_repos']
         for instance in GLInstance.objects.values_list('name', flat=True):
             def _fn(obj, inst=instance):
                 return GitLabRepository.objects.filter(projects=obj, instance=inst).count()
