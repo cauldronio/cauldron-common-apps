@@ -114,11 +114,22 @@ class IGHEnrich(Intention):
         try:
             s = Search(using=elastic, index='github') \
                 .filter(Q('match', pull_request=False)) \
-                .filter(Q('term', origin=self.repo.githubrepository.datasource_url))
-            value = s.count()
+                .filter(Q('term', origin=self.repo.githubrepository.datasource_url)) \
+                .extra(size=0, track_total_hits=True)
+            s.aggs.bucket('authors', 'cardinality', field='author_uuid')
+
+            response = s.execute()
+            if response is not None and response.success():
+                issues_submitters = response.aggregations.authors.value or 0
+                issues = response.hits.total['value'] or 0
+            else:
+                issues_submitters = 0
+                issues = 0
+
             metrics = self.repo.githubrepository.metrics
             if metrics:
-                metrics.issues = value
+                metrics.issues = issues
+                metrics.issues_submitters = issues_submitters
                 metrics.save()
         except ElasticsearchException as e:
             logger.warning(e)
@@ -126,11 +137,22 @@ class IGHEnrich(Intention):
         try:
             s = Search(using=elastic, index='github') \
                 .filter(Q('match', pull_request=True)) \
-                .filter(Q('term', origin=self.repo.githubrepository.datasource_url))
-            value = s.count()
+                .filter(Q('term', origin=self.repo.githubrepository.datasource_url)) \
+                .extra(size=0, track_total_hits=True)
+            s.aggs.bucket('authors', 'cardinality', field='author_uuid')
+
+            response = s.execute()
+            if response is not None and response.success():
+                reviews_submitters = response.aggregations.authors.value or 0
+                reviews = response.hits.total['value'] or 0
+            else:
+                reviews_submitters = 0
+                reviews = 0
+
             metrics = self.repo.githubrepository.metrics
             if metrics:
-                metrics.reviews = value
+                metrics.reviews = reviews
+                metrics.reviews_submitters = reviews_submitters
                 metrics.save()
         except ElasticsearchException as e:
             logger.warning(e)

@@ -115,6 +115,7 @@ class IGitEnrich(Intention):
             .filter(Q('term', origin=self.repo.gitrepository.datasource_url)) \
             .extra(size=0)
         s.aggs.bucket('commits', 'cardinality', field='hash')
+        s.aggs.bucket('authors', 'cardinality', field='author_uuid')
 
         try:
             response = s.execute()
@@ -123,14 +124,17 @@ class IGitEnrich(Intention):
             response = None
 
         if response is not None and response.success():
-            value = response.aggregations.commits.value or 0
+            commits = response.aggregations.commits.value or 0
+            authors = response.aggregations.authors.value or 0
         else:
-            value = 0
+            commits = 0
+            authors = 0
 
         metrics = self.repo.gitrepository.metrics
         if metrics:
-            logger.info(f"There are {value} commits")
-            metrics.commits = value
+            logger.info(f"There are {commits} commits and {authors} authors")
+            metrics.commits = commits
+            metrics.commits_authors = authors
             metrics.save()
 
     def run(self, job):

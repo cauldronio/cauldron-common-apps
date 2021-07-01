@@ -329,6 +329,7 @@ class BannerMessageAdmin(admin.ModelAdmin):
 
 @admin.register(RepositoryMetrics)
 class RRepositoryMetricsAdmin(admin.ModelAdmin):
-    list_display = ('id', 'name', 'last_update', 'commits', 'issues', 'reviews')
+    list_display = ('id', 'name', 'last_update', 'commits', 'issues', 'reviews',
+                    'commits_authors', 'issues_submitters', 'reviews_submitters')
     search_fields = ('id', 'name')
     list_filter = ('last_update',)
