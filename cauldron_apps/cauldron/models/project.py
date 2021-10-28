@@ -7,7 +7,6 @@ from django.db import models
 from django.conf import settings
 from django.db.models import Q
 
-from cauldron_apps.poolsched_export.models import ProjectExportFile
 from .repository import GitHubRepository, GitLabRepository, MeetupRepository, GitRepository, StackExchangeRepository
 from .backends import Backends
 from ..opendistro import OpendistroApi, BACKEND_INDICES
@@ -69,7 +68,7 @@ class Project(models.Model):
                 continue
             try:
                 file = self.file_exported.filter(backend=backend_id).latest('created')
-            except ProjectExportFile.DoesNotExist:
+            except models.ObjectDoesNotExist:
                 file = None
             running = self.iexport_csv.filter(backend=backend_id).exists()
             if file:

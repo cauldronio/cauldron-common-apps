@@ -2,7 +2,8 @@ from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
 from .models import IExportCSV, IExportCSVArchived, ProjectExportFile, \
-                    IReportKbn, IReportKbnArchived, ProjectKibanaReport
+                    IReportKbn, IReportKbnArchived, ProjectKibanaReport, \
+                    ICommitsByMonth, ICommitsByMonthArchived, ReportsCommitsByMonth
 
 
 def user_name(obj):
@@ -92,5 +93,28 @@ class ArchivedIntentionKbnAdmin(admin.ModelAdmin):
 class KibanaReportAdmin(admin.ModelAdmin):
     list_display = ('id', 'project', 'from_date', 'to_date', 'location')
     search_fields = ('id', 'project', 'from_date', 'to_date', 'location')
+    ordering = ('id', )
+
+
+@admin.register(ICommitsByMonth)
+class IntentionCommitsAdmin(admin.ModelAdmin):
+    list_display = ('id', 'progress', 'created', 'job', user_name, previous_count)
+    search_fields = ('id', 'user__first_name')
+    list_filter = ('created', RunningInAWorker)
+    ordering = ('created', )
+
+
+@admin.register(ICommitsByMonthArchived)
+class ArchivedIntentionCommitsAdmin(admin.ModelAdmin):
+    list_display = ('id', 'created', 'completed', user_name, 'status', 'arch_job')
+    search_fields = ('id', 'user__first_name', 'status')
+    list_filter = ('status', 'created', 'completed')
+    ordering = ('completed', )
+
+
+@admin.register(ReportsCommitsByMonth)
+class ReportsCommitsByMonthAdmin(admin.ModelAdmin):
+    list_display = ('id', 'created', 'location', 'size')
+    search_fields = ('id', )
     ordering = ('id', )
 
