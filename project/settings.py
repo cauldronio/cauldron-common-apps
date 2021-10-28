@@ -30,6 +30,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'
 
 GIT_REPOS = os.environ.get('GIT_REPOS')
 JOB_LOGS = os.environ.get('JOB_LOGS')
+SPDX_FILES = os.environ.get('SPDX_FILES')
 
 ES_IN_HOST = os.environ.get('ELASTIC_HOST')
 ES_IN_PORT = os.environ.get('ELASTIC_PORT')
@@ -69,6 +70,7 @@ INSTALLED_APPS = [
     'cauldron_apps.cauldron',
     'cauldron_apps.poolsched_export',
     'cauldron_apps.cauldron_actions',
+    'cauldron_apps.poolsched_sbom',
 ]
 
 MIDDLEWARE = [
