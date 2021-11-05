@@ -5,6 +5,7 @@ from .repository import Repository, GitRepository, GitHubRepository, \
 from .results import RepositoryMetrics
 from .ighowner import IAddGHOwner, IAddGHOwnerArchived
 from .iglowner import IAddGLOwner, IAddGLOwnerArchived
+from .irefreshproject import IRefreshProject, IRefreshProjectArchived
 
 from django.db import models
 from django.conf import settings
