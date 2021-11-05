@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 
 from .models import IExportCSV, IExportCSVArchived, ProjectExportFile, \
                     IReportKbn, IReportKbnArchived, ProjectKibanaReport, \
-                    ICommitsByMonth, ICommitsByMonthArchived, ReportsCommitsByMonth
+                    ICommitsByWeek, ICommitsByWeekArchived, ReportsCommitsByWeek
 
 
 def user_name(obj):
@@ -96,7 +96,7 @@ class KibanaReportAdmin(admin.ModelAdmin):
     ordering = ('id', )
 
 
-@admin.register(ICommitsByMonth)
+@admin.register(ICommitsByWeek)
 class IntentionCommitsAdmin(admin.ModelAdmin):
     list_display = ('id', 'progress', 'created', 'job', user_name, previous_count)
     search_fields = ('id', 'user__first_name')
@@ -104,7 +104,7 @@ class IntentionCommitsAdmin(admin.ModelAdmin):
     ordering = ('created', )
 
 
-@admin.register(ICommitsByMonthArchived)
+@admin.register(ICommitsByWeekArchived)
 class ArchivedIntentionCommitsAdmin(admin.ModelAdmin):
     list_display = ('id', 'created', 'completed', user_name, 'status', 'arch_job')
     search_fields = ('id', 'user__first_name', 'status')
@@ -112,8 +112,8 @@ class ArchivedIntentionCommitsAdmin(admin.ModelAdmin):
     ordering = ('completed', )
 
 
-@admin.register(ReportsCommitsByMonth)
-class ReportsCommitsByMonthAdmin(admin.ModelAdmin):
+@admin.register(ReportsCommitsByWeek)
+class ReportsCommitsByWeekAdmin(admin.ModelAdmin):
     list_display = ('id', 'created', 'location', 'size')
     search_fields = ('id', )
     ordering = ('id', )

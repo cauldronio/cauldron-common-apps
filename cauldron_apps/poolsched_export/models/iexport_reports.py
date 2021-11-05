@@ -21,18 +21,18 @@ logger = logging.getLogger(__name__)
 global_logger = logging.getLogger()
 
 
-class ReportsCommitsByMonth(models.Model):
+class ReportsCommitsByWeek(models.Model):
     """Represents a compressed CSV file for all the commits of each project of a user"""
     created = models.DateTimeField()
     location = models.CharField(max_length=150)
     size = models.IntegerField()
 
 
-class ICommitsByMonthManager(models.Manager):
-    """Model manager for instances of ICommitsByMonth"""
+class ICommitsByWeekManager(models.Manager):
+    """Model manager for instances of ICommitsByWeek"""
 
     def selectable_intentions(self, user, max=1):
-        """Return a list of selectable ICommitsByMonth intentions for a user
+        """Return a list of selectable ICommitsByWeek intentions for a user
 
         A intention is selectable if:
         * If it's time for the intention
@@ -41,7 +41,7 @@ class ICommitsByMonthManager(models.Manager):
 
         :param user: user to check
         :param max:  maximum number of intentions to return
-        :returns:    list of ICommitsByMonth intentions
+        :returns:    list of ICommitsByWeek intentions
         """
         intentions = self.filter(user=user,
                                  job=None,
@@ -49,9 +49,9 @@ class ICommitsByMonthManager(models.Manager):
         return intentions.all()[:max]
 
 
-class ICommitsByMonth(Intention):
+class ICommitsByWeek(Intention):
     """Intention to export data from a every project as CSV"""
-    objects = ICommitsByMonthManager()
+    objects = ICommitsByWeekManager()
     progress = models.CharField(max_length=100, default='pending')
 
     class Meta:
@@ -60,7 +60,7 @@ class ICommitsByMonth(Intention):
 
     @property
     def process_name(self):
-        return 'Export Commits by month'
+        return 'Export Commits by week'
 
     @classmethod
     @transaction.atomic
@@ -91,7 +91,7 @@ class ICommitsByMonth(Intention):
         :return:          Job object, if it was found, or None, if not
         """
         # Any intention is valid as this obtain all the reports from the instance.
-        candidates = ICommitsByMonth.objects.all()
+        candidates = ICommitsByWeek.objects.all()
         try:
             self.job = candidates[0].job
             self.save()
@@ -99,8 +99,12 @@ class ICommitsByMonth(Intention):
             return None
         return self.job
 
-    def report_commits_by_month(self, report):
-        logger.info(f"Get number of commits for {report.id} grouped by month")
+    def report_commits_by_week(self, report):
+        logger.info(f"Get number of commits for {report.id} grouped by week")
+
+        ch_include = set(string.ascii_letters + string.digits + string.whitespace)
+        report_name = ''.join(ch for ch in report.name if ch in ch_include)
+
         jwt_key = get_jwt_key(f"Project CSV", report.projectrole.backend_role)
         context = create_ssl_context()
         context.check_hostname = False
@@ -112,7 +116,7 @@ class ICommitsByMonth(Intention):
         s = Search(using=elastic, index='git') \
             .filter(~Q('match', files=0)) \
             .extra(size=0)
-        s.aggs.bucket('commits_date', 'date_histogram', field='grimoire_creation_date', calendar_interval='month')
+        s.aggs.bucket('commits_date', 'date_histogram', field='grimoire_creation_date', calendar_interval='week')
 
         try:
             response = s.execute()
@@ -128,12 +132,9 @@ class ICommitsByMonth(Intention):
                 c.append(item['key_as_string'].split('T')[0])
                 v.append(item['doc_count'])
 
-            df = pandas.DataFrame(data=[v], columns=c)
+            df = pandas.DataFrame(data=v, index=c, columns=[f'{report.id}-{report_name}'])
         else:
-            df = pandas.DataFrame()
-        df['report_id'] = report.id
-        ch_include = set(string.ascii_letters + string.digits + string.whitespace)
-        df['report_name'] = ''.join(ch for ch in report.name if ch in ch_include)
+            df = pandas.DataFrame(columns=[f'{report.id}-{report_name}'])
         return df
 
     def run(self, job):
@@ -148,7 +149,7 @@ class ICommitsByMonth(Intention):
             logger.info(f"Start exporting commits data")
             created = datetime.datetime.utcnow()
 
-            filename = f"csv/commits-by-month-" \
+            filename = f"csv/commits-by-week-" \
                        f"{created.strftime('%Y%m%dT%H%M%S')}.csv.gz"
 
             file_path = os.path.join(settings.STATIC_FILES_DIR, filename)
@@ -158,32 +159,30 @@ class ICommitsByMonth(Intention):
             total = Project.objects.count()
             finished = 0
             for project in Project.objects.all():
-                new_df = self.report_commits_by_month(project)
-                df = pandas.concat([df, new_df], sort=True, ignore_index=True)
+                new_df = self.report_commits_by_week(project)
+                df = pandas.concat([df, new_df], axis=1).sort_index()
                 finished += 1
                 self.progress = f'{finished}/{total}'
                 self.save()
-            df.insert(0, 'report_name', df.pop('report_name'))
-            df.insert(0, 'report_id', df.pop('report_id'))
 
-            df.to_csv(file_path, header=True, index=False, compression='gzip')
+            df.to_csv(file_path, header=True, index=True, compression='gzip')
             size = os.path.getsize(file_path)
 
             try:
-                obj = ReportsCommitsByMonth.objects.get()
+                obj = ReportsCommitsByWeek.objects.get()
                 try:
                     os.remove(os.path.join(settings.STATIC_FILES_DIR, obj.location))
                 except OSError:
                     pass
                 else:
                     logger.info(f"{obj.location} removed")
-                ReportsCommitsByMonth.objects.update(size=size,
-                                                     location=filename,
-                                                     created=created)
-            except ReportsCommitsByMonth.DoesNotExist:
-                ReportsCommitsByMonth.objects.create(size=size,
-                                                     location=filename,
-                                                     created=created)
+                ReportsCommitsByWeek.objects.update(size=size,
+                                                    location=filename,
+                                                    created=created)
+            except ReportsCommitsByWeek.DoesNotExist:
+                ReportsCommitsByWeek.objects.create(size=size,
+                                                    location=filename,
+                                                    created=created)
             return True
         except Exception as e:
             logger.exception('Got exception exporting data')
@@ -193,17 +192,17 @@ class ICommitsByMonth(Intention):
 
     def archive(self, status=ArchivedIntention.OK, arch_job=None):
         """Archive and remove the current intention"""
-        ICommitsByMonthArchived.objects.create(user=self.user,
-                                               created=self.created,
-                                               status=status,
-                                               arch_job=arch_job)
+        ICommitsByWeekArchived.objects.create(user=self.user,
+                                              created=self.created,
+                                              status=status,
+                                              arch_job=arch_job)
         self.delete()
 
 
-class ICommitsByMonthArchived(ArchivedIntention):
+class ICommitsByWeekArchived(ArchivedIntention):
     @property
     def process_name(self):
-        return 'Commits by month archived'
+        return 'Commits by week archived'
 
     class Meta:
         db_table = 'poolsched_export_commits_archived'
