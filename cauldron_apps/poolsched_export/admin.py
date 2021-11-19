@@ -114,7 +114,7 @@ class ArchivedIntentionCommitsAdmin(admin.ModelAdmin):
 
 @admin.register(ReportsCommitsByWeek)
 class ReportsCommitsByWeekAdmin(admin.ModelAdmin):
-    list_display = ('id', 'created', 'location', 'size')
+    list_display = ('id', 'created', 'location_commits', 'location_authors')
     search_fields = ('id', )
     ordering = ('id', )
 

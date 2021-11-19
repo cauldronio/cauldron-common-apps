@@ -24,8 +24,8 @@ global_logger = logging.getLogger()
 class ReportsCommitsByWeek(models.Model):
     """Represents a compressed CSV file for all the commits of each project of a user"""
     created = models.DateTimeField()
-    location = models.CharField(max_length=150)
-    size = models.IntegerField()
+    location_commits = models.CharField(max_length=150, null=True, default=None)
+    location_authors = models.CharField(max_length=150, null=True, default=None)
 
 
 class ICommitsByWeekManager(models.Manager):
@@ -137,6 +137,45 @@ class ICommitsByWeek(Intention):
             df = pandas.DataFrame(columns=[f'{report.id}-{report_name}'])
         return df
 
+    def report_commits_authors_by_week(self, report):
+        logger.info(f"Get number of commit authors for {report.id} grouped by week")
+
+        ch_include = set(string.ascii_letters + string.digits + string.whitespace)
+        report_name = ''.join(ch for ch in report.name if ch in ch_include)
+
+        jwt_key = get_jwt_key(f"Project CSV", report.projectrole.backend_role)
+        context = create_ssl_context()
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+        elastic = Elasticsearch(hosts=[settings.ES_IN_HOST], scheme='https', port=9200,
+                                headers={"Authorization": f"Bearer {jwt_key}"},
+                                ssl_context=context, timeout=5)
+
+        s = Search(using=elastic, index='git') \
+            .filter(~Q('match', files=0)) \
+            .extra(size=0)
+        s.aggs.bucket("bucket1", 'date_histogram', field='grimoire_creation_date', calendar_interval='week') \
+            .bucket('authors', 'cardinality', field='author_uuid')
+
+        try:
+            response = s.execute()
+        except ElasticsearchException as e:
+            logger.warning(e)
+            response = None
+
+        if response is not None and response.success():
+            o = response.aggregations.bucket1.to_dict()['buckets']
+            # Create a one row DataFrame with one column per date
+            c, v = [], []
+            for item in o:
+                c.append(item['key_as_string'].split('T')[0])
+                v.append(item['authors']['value'])
+
+            df = pandas.DataFrame(data=v, index=c, columns=[f'{report.id}-{report_name}'])
+        else:
+            df = pandas.DataFrame(columns=[f'{report.id}-{report_name}'])
+        return df
+
     def run(self, job):
         """Run the code to fulfill this intention
 
@@ -149,39 +188,50 @@ class ICommitsByWeek(Intention):
             logger.info(f"Start exporting commits data")
             created = datetime.datetime.utcnow()
 
-            filename = f"csv/commits-by-week-" \
-                       f"{created.strftime('%Y%m%dT%H%M%S')}.csv.gz"
+            filename_commits = f"csv/commits-by-week-" \
+                               f"{created.strftime('%Y%m%dT%H%M%S')}.csv.gz"
 
-            file_path = os.path.join(settings.STATIC_FILES_DIR, filename)
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            filename_authors = f"csv/commits-authors-by-week-" \
+                               f"{created.strftime('%Y%m%dT%H%M%S')}.csv.gz"
 
-            df = pandas.DataFrame()
+            file_path_commits = os.path.join(settings.STATIC_FILES_DIR, filename_commits)
+            file_path_authors = os.path.join(settings.STATIC_FILES_DIR, filename_authors)
+            os.makedirs(os.path.dirname(file_path_commits), exist_ok=True)
+            os.makedirs(os.path.dirname(file_path_authors), exist_ok=True)
+
+            commits_df = pandas.DataFrame()
+            authors_df = pandas.DataFrame()
             total = Project.objects.count()
             finished = 0
             for project in Project.objects.all():
-                new_df = self.report_commits_by_week(project)
-                df = pandas.concat([df, new_df], axis=1).sort_index()
+                new_dfc = self.report_commits_by_week(project)
+                commits_df = pandas.concat([commits_df, new_dfc], axis=1).sort_index()
+                new_dfa = self.report_commits_authors_by_week(project)
+                authors_df = pandas.concat([authors_df, new_dfa], axis=1).sort_index()
                 finished += 1
                 self.progress = f'{finished}/{total}'
                 self.save()
 
-            df.to_csv(file_path, header=True, index=True, compression='gzip')
-            size = os.path.getsize(file_path)
+            commits_df.to_csv(file_path_commits, header=True, index=True, compression='gzip')
+            authors_df.to_csv(file_path_authors, header=True, index=True, compression='gzip')
 
             try:
                 obj = ReportsCommitsByWeek.objects.get()
-                try:
-                    os.remove(os.path.join(settings.STATIC_FILES_DIR, obj.location))
-                except OSError:
-                    pass
-                else:
-                    logger.info(f"{obj.location} removed")
-                ReportsCommitsByWeek.objects.update(size=size,
-                                                    location=filename,
+                for filename in [obj.location_commits, obj.location_authors]:
+                    if filename:
+                        try:
+                            os.remove(os.path.join(settings.STATIC_FILES_DIR, obj.location_commits))
+                        except OSError:
+                            pass
+                        else:
+                            logger.info(f"{obj.location_commits} removed")
+                            logger.info(f"{obj.location_authors} removed")
+                ReportsCommitsByWeek.objects.update(location_commits=filename_commits,
+                                                    location_authors=filename_authors,
                                                     created=created)
             except ReportsCommitsByWeek.DoesNotExist:
-                ReportsCommitsByWeek.objects.create(size=size,
-                                                    location=filename,
+                ReportsCommitsByWeek.objects.create(location_commits=filename_commits,
+                                                    location_authors=filename_authors,
                                                     created=created)
             return True
         except Exception as e:
