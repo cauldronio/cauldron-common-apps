@@ -23,6 +23,7 @@ class Project(models.Model):
     created = models.DateTimeField(auto_now_add=True)
     public = models.BooleanField(default=True)
     autorefresh = models.BooleanField(default=False)
+    sbom = models.BooleanField(default=False)
     creator = models.ForeignKey(settings.AUTH_USER_MODEL,
                                 on_delete=models.SET_NULL,
                                 blank=True,
