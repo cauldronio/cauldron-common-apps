@@ -57,3 +57,6 @@ class SHMergeIdentities(Backend):
         except Exception as e:
             logger.error(f"Error merging identities. Cause: {e}")
             raise e
+        finally:
+            if task.db:
+                task.db._engine.dispose()

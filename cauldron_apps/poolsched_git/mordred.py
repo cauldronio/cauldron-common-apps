@@ -1,6 +1,7 @@
 import logging
 import json
 import os
+import time
 import traceback
 import sqlalchemy
 
@@ -11,6 +12,7 @@ try:
     from sirmordred.task_projects import TaskProjects
     from sirmordred.task_collection import TaskRawDataCollection
     from sirmordred.task_enrich import TaskEnrich
+    from grimoire_elk.enriched.enrich import Enrich
 except ImportError:
     from ..poolsched_utils.mordred import sirmordred_fake
     Config = sirmordred_fake.Config
@@ -76,7 +78,9 @@ class GitEnrich(Backend):
                 task = TaskEnrich(self.config, backend_section=BACKEND_SECTION)
             except sqlalchemy.exc.InternalError:
                 # There is a race condition in the code
+                logger.error('SQLAlchemy internal error')
                 task = None
+                time.sleep(1)
 
         try:
             task.execute()
@@ -84,3 +88,9 @@ class GitEnrich(Backend):
             logger.warning("Error enriching data for Git. Cause: {}".format(e))
             traceback.print_exc()
             return 1
+        finally:
+            if task.db:
+                task.db._engine.dispose()
+            if Enrich.sh_db:
+                Enrich.sh_db._engine.dispose()
+                Enrich.sh_db = None

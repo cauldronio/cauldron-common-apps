@@ -91,16 +91,22 @@ class TaskAutoRefresh(Task):
                     f'{self.last_autorefresh} for {self.backend_section}')
         uuids_refresh = api.search_last_modified_unique_identities(self.db, self.last_autorefresh)
         ids_refresh = api.search_last_modified_identities(self.db, self.last_autorefresh)
+        author_fields = ["author_uuid"]
+        try:
+            meta_fields = enrich_backend.meta_fields
+            author_fields += meta_fields
+        except AttributeError:
+            pass
 
         if uuids_refresh:
             logger.info(f"Refreshing {len(uuids_refresh)} uuid identities for {self.backend_section}")
-            eitems = refresh_identities(enrich_backend, author_field="author_uuid", author_values=uuids_refresh)
+            eitems = refresh_identities(enrich_backend, author_fields=author_fields, author_values=uuids_refresh)
             enrich_backend.elastic.bulk_upload(eitems, field_id)
         else:
             logger.info("No uuids to be refreshed found")
         if ids_refresh:
             logger.info(f"Refreshing {len(ids_refresh)} identity ids for {self.backend_section}")
-            eitems = refresh_identities(enrich_backend, author_field="author_id", author_values=ids_refresh)
+            eitems = refresh_identities(enrich_backend, author_fields=author_fields, author_values=ids_refresh)
             enrich_backend.elastic.bulk_upload(eitems, field_id)
         else:
             logger.info("No ids to be refreshed found")
@@ -117,3 +123,5 @@ class TaskAutoRefresh(Task):
 
         except Exception as e:
             raise e
+        finally:
+            self.db._engine.dispose()
