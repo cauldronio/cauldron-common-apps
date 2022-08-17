@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 from .models import IExportCSV, IExportCSVArchived, ProjectExportFile, \
@@ -59,10 +60,18 @@ class IntentionAdmin(admin.ModelAdmin):
 
 @admin.register(IExportCSVArchived)
 class ArchivedIntentionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'project', 'backend', 'created', 'completed', user_name, 'status', 'arch_job')
+    list_display = ('id', 'project', 'backend', 'created', 'completed', user_name, 'status', 'arch_job', 'logs')
     search_fields = ('id', 'project', 'backend', 'user__first_name', 'status')
     list_filter = ('status', 'created', 'completed')
     ordering = ('completed', )
+
+    def logs(self, obj):
+        try:
+            job_id = obj.arch_job.logs.location.split('-')[1].split('.')[0]
+            url = "/logs/" + str(job_id)
+            return format_html("<a href='{url}'>Show</a>", url=url)
+        except AttributeError:
+            return None
 
 
 @admin.register(ProjectExportFile)
@@ -83,10 +92,18 @@ class IntentionKbnAdmin(admin.ModelAdmin):
 
 @admin.register(IReportKbnArchived)
 class ArchivedIntentionKbnAdmin(admin.ModelAdmin):
-    list_display = ('id', 'kbn_report', 'created', 'completed', user_name, 'status', 'arch_job')
+    list_display = ('id', 'kbn_report', 'created', 'completed', user_name, 'status', 'arch_job', 'logs')
     search_fields = ('id', 'kbn_report', 'user__first_name', 'status')
     list_filter = ('status', 'created', 'completed')
     ordering = ('completed', )
+
+    def logs(self, obj):
+        try:
+            job_id = obj.arch_job.logs.location.split('-')[1].split('.')[0]
+            url = "/logs/" + str(job_id)
+            return format_html("<a href='{url}'>Show</a>", url=url)
+        except AttributeError:
+            return None
 
 
 @admin.register(ProjectKibanaReport)
@@ -106,10 +123,18 @@ class IntentionCommitsAdmin(admin.ModelAdmin):
 
 @admin.register(ICommitsByWeekArchived)
 class ArchivedIntentionCommitsAdmin(admin.ModelAdmin):
-    list_display = ('id', 'created', 'completed', user_name, 'status', 'arch_job')
+    list_display = ('id', 'created', 'completed', user_name, 'status', 'arch_job', 'logs')
     search_fields = ('id', 'user__first_name', 'status')
     list_filter = ('status', 'created', 'completed')
     ordering = ('completed', )
+
+    def logs(self, obj):
+        try:
+            job_id = obj.arch_job.logs.location.split('-')[1].split('.')[0]
+            url = "/logs/" + str(job_id)
+            return format_html("<a href='{url}'>Show</a>", url=url)
+        except AttributeError:
+            return None
 
 
 @admin.register(ReportsCommitsByWeek)

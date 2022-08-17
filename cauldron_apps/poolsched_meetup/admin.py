@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 from .models import IMeetupRaw, IMeetupEnrich, IMeetupRawArchived, IMeetupEnrichArchived, MeetupRepo, MeetupToken, \
@@ -61,13 +62,21 @@ class MeetupIntentionAdmin(admin.ModelAdmin):
 
 @admin.register(IMeetupRawArchived, IMeetupEnrichArchived)
 class MeetArchivedIntentionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'repo_group', 'created', 'completed', user_name, 'status', 'arch_job')
+    list_display = ('id', 'repo_group', 'created', 'completed', user_name, 'status', 'arch_job', 'logs')
     search_fields = ('id', 'repo__repo', 'user__first_name', 'status')
     list_filter = ('status', 'created', 'completed')
     ordering = ('completed', )
 
     def repo_group(self, obj):
         return obj.repo.repo
+
+    def logs(self, obj):
+        try:
+            job_id = obj.arch_job.logs.location.split('-')[1].split('.')[0]
+            url = "/logs/" + str(job_id)
+            return format_html("<a href='{url}'>Show</a>", url=url)
+        except AttributeError:
+            return None
 
 
 @admin.register(MeetupRepo)
@@ -80,7 +89,7 @@ class GitRepositoryAdmin(admin.ModelAdmin):
 
 @admin.register(MeetupToken)
 class TokenAdmin(admin.ModelAdmin):
-    list_display = ('id', 'token', 'reset', user_name, 'job_count')
+    list_display = ('id', 'reset', user_name, 'job_count')
     search_fields = ('id', 'repo')
     list_filter = ('reset',)
     ordering = ('id',)
@@ -98,6 +107,14 @@ class AutoRefreshIntentionAdmin(admin.ModelAdmin):
 
 @admin.register(IMeetupAutoRefreshArchived)
 class AutoRefreshArchivedIntentionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'created', 'completed', 'status', 'arch_job')
+    list_display = ('id', 'created', 'completed', 'status', 'arch_job', 'logs')
     list_filter = ('status', 'created', 'completed')
     ordering = ('-completed', )
+
+    def logs(self, obj):
+        try:
+            job_id = obj.arch_job.logs.location.split('-')[1].split('.')[0]
+            url = "/logs/" + str(job_id)
+            return format_html("<a href='{url}'>Show</a>", url=url)
+        except AttributeError:
+            return None

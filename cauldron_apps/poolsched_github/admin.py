@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 from .models import IGHRaw, IGHEnrich, IGHEnrichArchived, IGHRawArchived, GHRepo, GHToken, \
@@ -65,7 +66,7 @@ class GHGLIntentionAdmin(admin.ModelAdmin):
 
 @admin.register(IGHRawArchived, IGHEnrichArchived)
 class GHGLArchivedIntentionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'repo_owner', 'repo_name', 'created', 'completed', user_name, 'status', 'arch_job')
+    list_display = ('id', 'repo_owner', 'repo_name', 'created', 'completed', user_name, 'status', 'arch_job', 'logs')
     search_fields = ('id', 'repo__owner', 'repo__repo', 'user__first_name', 'status')
     list_filter = ('status', 'created', 'completed')
     ordering = ('completed', )
@@ -75,6 +76,14 @@ class GHGLArchivedIntentionAdmin(admin.ModelAdmin):
 
     def repo_name(self, obj):
         return obj.repo.repo
+
+    def logs(self, obj):
+        try:
+            job_id = obj.arch_job.logs.location.split('-')[1].split('.')[0]
+            url = "/logs/" + str(job_id)
+            return format_html("<a href='{url}'>Show</a>", url=url)
+        except AttributeError:
+            return None
 
 
 @admin.register(GHRepo)
@@ -87,7 +96,7 @@ class GHGLRepositoryAdmin(admin.ModelAdmin):
 
 @admin.register(GHToken)
 class TokenAdmin(admin.ModelAdmin):
-    list_display = ('id', 'token', 'reset', user_name, 'job_count')
+    list_display = ('id', 'reset', user_name, 'job_count')
     search_fields = ('id', 'repo')
     list_filter = ('reset',)
     ordering = ('id',)
@@ -105,6 +114,14 @@ class AutoRefreshIntentionAdmin(admin.ModelAdmin):
 
 @admin.register(IGHIssueAutoRefreshArchived, IGH2IssueAutoRefreshArchived, IGHRepoAutoRefreshArchived)
 class AutoRefreshArchivedIntentionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'created', 'completed', 'status', 'arch_job')
+    list_display = ('id', 'created', 'completed', 'status', 'arch_job', 'logs')
     list_filter = ('status', 'created', 'completed')
     ordering = ('-completed', )
+
+    def logs(self, obj):
+        try:
+            job_id = obj.arch_job.logs.location.split('-')[1].split('.')[0]
+            url = "/logs/" + str(job_id)
+            return format_html("<a href='{url}'>Show</a>", url=url)
+        except AttributeError:
+            return None

@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 from .models import IStackExchangeRaw, IStackExchangeEnrich, IStackExchangeRawArchived, IStackExchangeEnrichArchived, \
@@ -61,13 +62,21 @@ class IntentionAdmin(admin.ModelAdmin):
 
 @admin.register(IStackExchangeRawArchived, IStackExchangeEnrichArchived)
 class ArchivedIntentionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'site_tagged', 'created', 'completed', user_name, 'status', 'arch_job')
+    list_display = ('id', 'site_tagged', 'created', 'completed', user_name, 'status', 'arch_job', 'logs')
     search_fields = ('id', 'question_tag__tagged', 'user__first_name', 'status')
     list_filter = ('status', 'created', 'completed')
     ordering = ('completed', )
 
     def site_tagged(self, obj):
         return f"{obj.question_tag.site}/{obj.question_tag.tagged}"
+
+    def logs(self, obj):
+        try:
+            job_id = obj.arch_job.logs.location.split('-')[1].split('.')[0]
+            url = "/logs/" + str(job_id)
+            return format_html("<a href='{url}'>Show</a>", url=url)
+        except AttributeError:
+            return None
 
 
 @admin.register(StackExchangeQuestionTag)
@@ -80,7 +89,7 @@ class GitRepositoryAdmin(admin.ModelAdmin):
 
 @admin.register(StackExchangeToken)
 class TokenAdmin(admin.ModelAdmin):
-    list_display = ('id', 'token', 'reset', user_name, 'job_count')
+    list_display = ('id', 'reset', user_name, 'job_count')
     search_fields = ('id', 'repo')
     list_filter = ('reset',)
     ordering = ('id',)
@@ -98,6 +107,14 @@ class AutoRefreshIntentionAdmin(admin.ModelAdmin):
 
 @admin.register(IStackExchangeAutoRefreshArchived)
 class AutoRefreshArchivedIntentionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'created', 'completed', 'status', 'arch_job')
+    list_display = ('id', 'created', 'completed', 'status', 'arch_job', 'logs')
     list_filter = ('status', 'created', 'completed')
     ordering = ('-completed', )
+
+    def logs(self, obj):
+        try:
+            job_id = obj.arch_job.logs.location.split('-')[1].split('.')[0]
+            url = "/logs/" + str(job_id)
+            return format_html("<a href='{url}'>Show</a>", url=url)
+        except AttributeError:
+            return None

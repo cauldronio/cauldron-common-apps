@@ -4,13 +4,14 @@ from django.contrib import admin
 from django.http import HttpResponse
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth import get_user_model
+from django.utils.html import format_html
 
 from cauldron_apps.poolsched_gitlab.models import GLInstance
 from .models import IAddGHOwner, IAddGLOwner, IAddGHOwnerArchived, IAddGLOwnerArchived, \
     Project, Repository, GitRepository, GitHubRepository, GitLabRepository, MeetupRepository, \
     StackExchangeRepository, UserWorkspace, ProjectRole, AnonymousUser, OauthUser, AuthorizedBackendUser, \
     BannerMessage, RepositoryMetrics
-
+from poolsched.models import Intention
 
 User = get_user_model()
 
@@ -297,10 +298,18 @@ class IntentionAdmin(admin.ModelAdmin):
 @admin.register(IAddGHOwnerArchived, IAddGLOwnerArchived)
 class ArchivedIntentionAdmin(admin.ModelAdmin):
     list_display = ('id', 'created', 'completed', user_name, 'status',
-                    'arch_job', 'owner', 'project', 'commits', 'issues', 'forks', 'analyze')
+                    'arch_job', 'owner', 'project', 'commits', 'issues', 'forks', 'analyze', 'logs')
     search_fields = ('id', 'user__first_name', 'status', 'owner', 'project__name')
     list_filter = ('status', 'created', 'completed')
     ordering = ('completed', )
+
+    def logs(self, obj):
+        try:
+            job_id = obj.arch_job.logs.location.split('-')[1].split('.')[0]
+            url = "/logs/" + str(job_id)
+            return format_html("<a href='{url}'>Show</a>", url=url)
+        except AttributeError:
+            return None
 
 
 @admin.register(OauthUser)

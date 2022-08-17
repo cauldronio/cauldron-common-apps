@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 from .models import GitRepo, IGitRaw, IGitEnrich, IGitRawArchived, IGitEnrichArchived, \
@@ -61,7 +62,7 @@ class IntentionAdmin(admin.ModelAdmin):
 
 @admin.register(IGitRawArchived, IGitEnrichArchived)
 class ArchivedIntentionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'repo_url', 'created', 'completed', user_name, 'status', 'arch_job')
+    list_display = ('id', 'repo_url', 'created', 'completed', user_name, 'status', 'arch_job', 'logs')
     search_fields = ('id', 'repo__url', 'user__first_name', 'status')
     list_filter = ('status', 'created', 'completed')
     ordering = ('completed', )
@@ -69,6 +70,13 @@ class ArchivedIntentionAdmin(admin.ModelAdmin):
     def repo_url(self, obj):
         return obj.repo.url
 
+    def logs(self, obj):
+        try:
+            job_id = obj.arch_job.logs.location.split('-')[1].split('.')[0]
+            url = "/logs/" + str(job_id)
+            return format_html("<a href='{url}'>Show</a>", url=url)
+        except AttributeError:
+            return None
 
 @admin.register(GitRepo)
 class RepositoryAdmin(admin.ModelAdmin):
@@ -87,6 +95,14 @@ class AutoRefreshIntentionAdmin(admin.ModelAdmin):
 
 @admin.register(IGitAutoRefreshArchived)
 class AutoRefreshArchivedIntentionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'created', 'completed', 'status', 'arch_job')
+    list_display = ('id', 'created', 'completed', 'status', 'arch_job', 'logs')
     list_filter = ('status', 'created', 'completed')
     ordering = ('-completed', )
+
+    def logs(self, obj):
+        try:
+            job_id = obj.arch_job.logs.location.split('-')[1].split('.')[0]
+            url = "/logs/" + str(job_id)
+            return format_html("<a href='{url}'>Show</a>", url=url)
+        except AttributeError:
+            return None

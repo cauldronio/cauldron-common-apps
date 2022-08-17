@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 from .models import ITwitterNotify, ITwitterNotifyArchived
@@ -57,7 +58,15 @@ class IntentionAdmin(admin.ModelAdmin):
 
 @admin.register(ITwitterNotifyArchived)
 class ArchivedIntentionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'project', 'created', 'completed', user_name, 'status', 'arch_job')
+    list_display = ('id', 'project', 'created', 'completed', user_name, 'status', 'arch_job', 'logs')
     search_fields = ('id', 'project', 'user__first_name', 'status')
     list_filter = ('status', 'created', 'completed')
     ordering = ('completed', )
+
+    def logs(self, obj):
+        try:
+            job_id = obj.arch_job.logs.location.split('-')[1].split('.')[0]
+            url = "/logs/" + str(job_id)
+            return format_html("<a href='{url}'>Show</a>", url=url)
+        except AttributeError:
+            return None
