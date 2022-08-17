@@ -1,3 +1,4 @@
+import datetime
 import logging
 
 from django.db import models, transaction
@@ -242,6 +243,10 @@ class IAddGLOwner(Intention):
             logger.error(f'Token RateLimit before start')
             return False
         logger.info(f"Running IAddGLOwner intention: {self.owner}, token: {token}")
+
+        # Refresh token
+        if token.expiring_token and token.expiration_date < (now() + datetime.timedelta(seconds=60)):
+            token.update_token()
 
         handler = self._create_log_handler(job)
         try:

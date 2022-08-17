@@ -163,6 +163,10 @@ class IGLRaw(Intention):
         if not token:
             logger.error(f'Token not found for intention {self}')
             raise Job.StopException
+        # Refresh token
+        if token.expiring_token and token.expiration_date < (now() + datetime.timedelta(seconds=60)):
+            token.update_token()
+
         handler = self._create_log_handler(job)
         try:
             global_logger.addHandler(handler)

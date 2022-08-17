@@ -1,5 +1,8 @@
+import datetime
 import logging
+from urllib.parse import urljoin
 
+import requests
 from django.db import models
 from django.conf import settings
 from django.utils.timezone import now
@@ -77,6 +80,12 @@ class GLToken(models.Model):
         Job,
         related_name='gltokens',
         related_query_name='gltoken')
+    # Define whether the token can expire
+    expiring_token = models.BooleanField(default=True)
+    # Token used for refreshing the token when expired
+    refresh_token = models.CharField(max_length=100, null=True, default=None)
+    # Date at which the token is expired
+    expiration_date = models.DateTimeField(null=True, default=None)
 
     class Meta:
         db_table = TABLE_PREFIX + 'token'
@@ -85,3 +94,18 @@ class GLToken(models.Model):
     @property
     def is_ready(self):
         return now() > self.reset
+
+    def update_token(self):
+        payload = {'refresh_token': self.refresh_token,
+                   'grant_type': 'refresh_token',
+                   'client_id': self.instance.client_id,
+                   'client_secret': self.instance.client_secret}
+        r = requests.post(urljoin(self.instance.endpoint, '/oauth/token'),
+                          params=payload)
+        if r.ok:
+            data = r.json()
+            self.refresh_token = data['refresh_token']
+            self.token = data['access_token']
+            self.expiration_date = now() + datetime.timedelta(seconds=7200)
+            self.save()
+        return r.ok
