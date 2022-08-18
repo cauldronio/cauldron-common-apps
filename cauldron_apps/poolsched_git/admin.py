@@ -72,8 +72,8 @@ class ArchivedIntentionAdmin(admin.ModelAdmin):
 
     def logs(self, obj):
         try:
-            job_id = obj.arch_job.logs.location.split('-')[1].split('.')[0]
-            url = "/logs/" + str(job_id)
+            log_id = obj.arch_job.logs.id
+            url = "/logs/" + str(log_id)
             return format_html("<a href='{url}'>Show</a>", url=url)
         except AttributeError:
             return None
@@ -101,8 +101,8 @@ class AutoRefreshArchivedIntentionAdmin(admin.ModelAdmin):
 
     def logs(self, obj):
         try:
-            job_id = obj.arch_job.logs.location.split('-')[1].split('.')[0]
-            url = "/logs/" + str(job_id)
+            log_id = obj.arch_job.logs.id
+            url = "/logs/" + str(log_id)
             return format_html("<a href='{url}'>Show</a>", url=url)
         except AttributeError:
             return None

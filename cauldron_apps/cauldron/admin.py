@@ -11,7 +11,6 @@ from .models import IAddGHOwner, IAddGLOwner, IAddGHOwnerArchived, IAddGLOwnerAr
     Project, Repository, GitRepository, GitHubRepository, GitLabRepository, MeetupRepository, \
     StackExchangeRepository, UserWorkspace, ProjectRole, AnonymousUser, OauthUser, AuthorizedBackendUser, \
     BannerMessage, RepositoryMetrics
-from poolsched.models import Intention
 
 User = get_user_model()
 
@@ -305,8 +304,8 @@ class ArchivedIntentionAdmin(admin.ModelAdmin):
 
     def logs(self, obj):
         try:
-            job_id = obj.arch_job.logs.location.split('-')[1].split('.')[0]
-            url = "/logs/" + str(job_id)
+            log_id = obj.arch_job.logs.id
+            url = "/logs/" + str(log_id)
             return format_html("<a href='{url}'>Show</a>", url=url)
         except AttributeError:
             return None
